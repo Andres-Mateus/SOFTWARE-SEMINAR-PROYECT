@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from typing import Dict
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
@@ -28,7 +29,10 @@ def _build_database_url() -> str:
     password = os.getenv("DB_PASSWORD", "admon")
     database = os.getenv("DB_NAME", "parking")
     port = os.getenv("DB_PORT", "5432")
-    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+    safe_user = quote_plus(user)
+    safe_password = quote_plus(password)
+    safe_database = quote_plus(database)
+    return f"postgresql://{safe_user}:{safe_password}@{host}:{port}/{safe_database}"
 
 
 def _build_connect_args(database_url: str) -> Dict[str, object]:

@@ -19,6 +19,8 @@ Set the following environment variables (or provide a single `DATABASE_URL`) bef
 
 - `DATABASE_URL`: full SQLAlchemy URL (e.g. `postgresql://user:pass@localhost:5432/parking`).
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: fallback parameters to build the URL.
+- User names, passwords and database names are percent-encoded automatically, so credentials with spaces or non-ASCII
+  characters can be supplied without additional escaping.
 - `SQL_ECHO`: set to `true` to print SQL statements for debugging.
 
 `database.py` automatically detects SQLite URLs and enables the correct `check_same_thread` flag, allowing the in-memory database used by the test suite.
