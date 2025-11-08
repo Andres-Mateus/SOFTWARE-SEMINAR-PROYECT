@@ -19,6 +19,8 @@ Set the following environment variables (or provide a single `DATABASE_URL`) bef
 
 - `DATABASE_URL`: full SQLAlchemy URL (e.g. `postgresql://user:pass@localhost:5432/parking`).
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: fallback parameters to build the URL.
+- User names, passwords and database names are percent-encoded automatically (even when using `DATABASE_URL` directly), so
+  credentials with spaces or non-ASCII characters can be supplied without additional escaping.
 - User names, passwords and database names are percent-encoded automatically, so credentials with spaces or non-ASCII
   characters can be supplied without additional escaping.
 - `SQL_ECHO`: set to `true` to print SQL statements for debugging.

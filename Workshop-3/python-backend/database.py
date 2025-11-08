@@ -4,12 +4,62 @@ from __future__ import annotations
 
 import os
 from typing import Dict
+from urllib.parse import quote_plus, urlparse, urlunparse
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
 
 load_dotenv()
+
+
+def _sanitize_database_url(database_url: str) -> str:
+    """Percent-encode credentials and database names when needed."""
+
+    try:
+        parsed = urlparse(database_url)
+    except ValueError:
+        return database_url
+
+    if not parsed.scheme.startswith("postgresql"):
+        return database_url
+
+    username = parsed.username
+    password = parsed.password
+    hostname = parsed.hostname or ""
+    port = f":{parsed.port}" if parsed.port else ""
+
+    userinfo = ""
+    if username is not None:
+        safe_user = quote_plus(username, safe="%")
+        if password is not None:
+            safe_password = quote_plus(password, safe="%")
+            userinfo = f"{safe_user}:{safe_password}@"
+        else:
+            userinfo = f"{safe_user}@"
+    elif password is not None:
+        safe_password = quote_plus(password, safe="%")
+        userinfo = f":{safe_password}@"
+
+    if hostname and ":" in hostname and not hostname.startswith("["):
+        host_segment = f"[{hostname}]{port}"
+    else:
+        host_segment = f"{hostname}{port}"
+
+    path = parsed.path or ""
+    if path and path != "/":
+        path = "/" + quote_plus(path.lstrip("/"), safe="%/")
+
+    return urlunparse(
+        (
+            parsed.scheme,
+            f"{userinfo}{host_segment}",
+            path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment,
+        )
+    )
 
 
 def _build_database_url() -> str:
@@ -22,6 +72,7 @@ def _build_database_url() -> str:
 
     database_url = os.getenv("DATABASE_URL")
     if database_url:
+        return _sanitize_database_url(database_url)
         return database_url
 
     host = os.getenv("DB_HOST", "localhost")
@@ -29,6 +80,9 @@ def _build_database_url() -> str:
     password = os.getenv("DB_PASSWORD", "admon")
     database = os.getenv("DB_NAME", "parking")
     port = os.getenv("DB_PORT", "5432")
+    safe_user = quote_plus(user, safe="%")
+    safe_password = quote_plus(password, safe="%")
+    safe_database = quote_plus(database, safe="%")
     safe_user = quote_plus(user)
     safe_password = quote_plus(password)
     safe_database = quote_plus(database)
