@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Parqueadero Web - Administración</title>
+  <title>Parking Admin Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Icono de la pestaña: mismo estilo que el logo de la navbar -->
@@ -12,51 +12,50 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- NAVBAR SUPERIOR -->
+  <!-- Top navigation bar -->
   <header class="navbar">
     <div class="navbar-left">
-      <!-- Logo circular con P -->
       <div class="logo-circle">P</div>
-      <div class="logo-text">Parqueadero Web</div>
+      <div class="logo-text">Parking Admin</div>
 
-      <!-- Navegación principal (se muestra solo si hay sesión) -->
+      <!-- Primary navigation (visible only when authenticated) -->
       <nav id="main-nav" class="nav-links hidden">
-        <a href="#" data-view="dashboard" class="nav-link active">Panel</a>
-        <a href="#" data-view="vehicles" class="nav-link">Vehículos</a>
+        <a href="#" data-view="dashboard" class="nav-link active">Dashboard</a>
+        <a href="#" data-view="vehicles" class="nav-link">Vehicle records</a>
       </nav>
     </div>
 
     <div class="navbar-right">
-      <!-- Botón para ir al login (visible sin sesión) -->
-      <button id="login-nav-btn" class="btn btn-accent">Iniciar Sesión</button>
-      <!-- Botón cerrar sesión (visible con sesión) -->
-      <button id="logout-btn" class="btn btn-danger hidden">Cerrar Sesión</button>
+      <!-- Login button (visible while logged out) -->
+      <button id="login-nav-btn" class="btn btn-accent">Sign in</button>
+      <!-- Logout button (visible while logged in) -->
+      <button id="logout-btn" class="btn btn-danger hidden">Sign out</button>
     </div>
   </header>
 
   <!-- CONTENEDOR PRINCIPAL -->
   <main class="page-container">
-    <!-- SECCIÓN LOGIN -->
+    <!-- Login section -->
     <section id="login-section" class="card login-card">
-      <h1>Iniciar Sesión</h1>
+      <h1>Sign in</h1>
       <p class="subtitle">
-        Acceso para administradores y operadores del sistema de parqueadero.
+        Enter your credentials to access the parking management console.
       </p>
 
       <form id="login-form" class="form">
         <label>
-          Correo
+          Username
           <input
-            type="email"
-            id="login-email"
+            type="text"
+            id="login-username"
             class="input"
-            placeholder="admin@parqueadero.com"
+            placeholder="admin"
             required
           />
         </label>
 
         <label>
-          Contraseña
+          Password
           <input
             type="password"
             id="login-password"
@@ -66,22 +65,22 @@
           />
         </label>
 
-        <!-- Mensaje de error de login -->
+        <!-- Login error message -->
         <div id="login-error" class="form-error"></div>
 
         <button type="submit" class="btn btn-primary full">
-          Iniciar Sesión
+          Sign in
         </button>
       </form>
 
-      <!-- Link para ir al registro con código -->
+      <!-- Link to the registration form -->
       <p class="helper-text">
-        ¿Tienes un código único de acceso?
-        <a href="#" id="go-register" class="link-inline">Crea tu cuenta aquí.</a>
+        Do you have a one-time access code?
+        <a href="#" id="go-register" class="link-inline">Create your account.</a>
       </p>
     </section>
 
-    <!-- SECCIÓN REGISTRO CON CÓDIGO ÚNICO -->
+    <!-- Registration section -->
     <section id="register-section" class="card login-card hidden">
       <h1>Create Account</h1>
       <p class="subtitle">
@@ -89,6 +88,17 @@
       </p>
 
       <form id="register-form" class="form">
+        <label>
+          Username
+          <input
+            type="text"
+            id="register-username"
+            class="input"
+            placeholder="new.operator"
+            required
+          />
+        </label>
+
         <label>
           Email
           <input
@@ -122,7 +132,7 @@
           />
         </label>
 
-        <!-- Mensajes de error / éxito -->
+        <!-- Registration feedback -->
         <div id="register-error" class="form-error"></div>
         <div id="register-success" class="form-info"></div>
 
@@ -141,34 +151,34 @@
     <section id="app-section" class="hidden">
       <!-- VISTA: DASHBOARD -->
       <section id="dashboard-view" class="view">
-        <h1 class="page-title">Panel de Administración</h1>
+        <h1 class="page-title">Operations dashboard</h1>
 
-        <!-- KPIs principales -->
+        <!-- Key performance indicators -->
         <div class="kpi-grid">
           <div class="card kpi">
             <div class="kpi-value" id="kpi-occupied">-</div>
-            <div class="kpi-label">Espacios Ocupados</div>
+            <div class="kpi-label">Occupied spaces</div>
           </div>
           <div class="card kpi">
             <div class="kpi-value" id="kpi-free">-</div>
-            <div class="kpi-label">Espacios Libres</div>
+            <div class="kpi-label">Available spaces</div>
           </div>
           <div class="card kpi">
             <div class="kpi-value" id="kpi-rate">-</div>
-            <div class="kpi-label">Tarifa Actual</div>
+            <div class="kpi-label">Current base fee</div>
           </div>
           <div class="card kpi">
             <div class="kpi-value" id="kpi-active">-</div>
-            <div class="kpi-label">Vehículos Activos</div>
+            <div class="kpi-label">Active vehicles</div>
           </div>
         </div>
 
-        <!-- Ocupación + actividad reciente -->
+        <!-- Occupancy and latest activity -->
         <div class="grid-2">
           <div class="card">
-            <h2>Ocupación Promedio (24h)</h2>
+            <h2>Capacity overview</h2>
             <p class="muted">
-              Basado en las estadísticas obtenidas desde el core-service.
+              The progress bar compares occupied tickets versus the available lot space records stored in the Python API.
             </p>
             <div class="bar-wrapper">
               <div id="occupancy-bar" class="bar-fill" style="width: 0%"></div>
@@ -177,74 +187,81 @@
           </div>
 
           <div class="card">
-            <h2>Actividad Reciente</h2>
+            <h2>Latest tickets</h2>
             <ul id="recent-activity" class="activity-list">
-              <li class="muted">Sin datos aún.</li>
+              <li class="muted">No ticket activity yet.</li>
             </ul>
           </div>
         </div>
       </section>
 
-      <!-- VISTA: GESTIÓN DE VEHÍCULOS -->
+      <!-- Vehicle data view -->
       <section id="vehicles-view" class="view hidden">
-        <h1 class="page-title">Gestión de Vehículos</h1>
+        <h1 class="page-title">Vehicle registry</h1>
 
         <div class="grid-2-1">
-          <!-- Formulario entrada/salida -->
+          <!-- Vehicle creation form -->
           <div class="card">
-            <h2>Registro de Entrada/Salida</h2>
+            <h2>Register vehicle</h2>
             <form id="vehicle-form" class="form">
-              <!-- Selector de modo -->
-              <div class="toggle-group">
-                <label>
-                  <input type="radio" name="mode" value="entry" checked />
-                  Entrada
-                </label>
-                <label>
-                  <input type="radio" name="mode" value="exit" />
-                  Salida
-                </label>
-              </div>
-
               <label>
-                Placa del Vehículo
+                License plate
                 <input
                   type="text"
                   id="vehicle-plate"
                   class="input"
-                  placeholder="ABC-123"
+                  placeholder="ABC123"
                   required
                 />
               </label>
 
-              <!-- Mensaje de estado -->
+              <label>
+                Vehicle type
+                <select id="vehicle-type" class="input" required>
+                  <option value="CAR">Car</option>
+                  <option value="MOTORCYCLE">Motorcycle</option>
+                  <option value="TRUCK">Truck</option>
+                  <option value="BUS">Bus</option>
+                  <option value="VAN">Van</option>
+                  <option value="SUV">SUV</option>
+                  <option value="BICYCLE">Bicycle</option>
+                  <option value="ELECTRIC_BICYCLE">Electric bicycle</option>
+                  <option value="ELECTRIC_SCOOTER">Electric scooter</option>
+                </select>
+              </label>
+
+              <label>
+                Registration date
+                <input type="date" id="vehicle-date" class="input" required />
+              </label>
+
               <div id="vehicle-message" class="form-info"></div>
 
               <button type="submit" class="btn btn-primary full">
-                Registrar
+                Save vehicle
               </button>
             </form>
           </div>
 
-          <!-- Actividad reciente (vehículos) -->
+          <!-- Recent vehicle records -->
           <div class="card">
-            <h2>Actividad Reciente</h2>
+            <h2>Latest registered vehicles</h2>
             <ul id="recent-activity-vehicles" class="activity-list">
-              <li class="muted">Sin datos aún.</li>
+              <li class="muted">No vehicles stored yet.</li>
             </ul>
           </div>
         </div>
 
-        <!-- Tabla de slots -->
+        <!-- Lot space summary -->
         <div class="card mt-20">
-          <h2>Estado del Estacionamiento</h2>
+          <h2>Configured lot spaces</h2>
           <div class="slots-header">
-            <span>Espacio</span>
-            <span>Estado</span>
-            <span>Placa</span>
+            <span>Identifier</span>
+            <span>Vehicle type</span>
+            <span>Total spaces</span>
           </div>
           <div id="slots-table" class="slots-body">
-            <div class="muted">Sin datos aún.</div>
+            <div class="muted">No lot spaces configured yet.</div>
           </div>
         </div>
       </section>
@@ -253,9 +270,9 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <div>Workshop-3 · Sistema de Gestión de Parqueadero</div>
+    <div>Workshop-3 · Parking Management System</div>
     <div class="footer-right">
-      HTML + CSS + JS · Integrado con Auth & Core Services
+      HTML + CSS + JS · Connected to Auth & Core APIs
     </div>
   </footer>
 
