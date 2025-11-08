@@ -1,27 +1,21 @@
 package com.parkingapp.dto;
 
-/**
- * Authentication response payload returned after successful login.
- */
+import lombok.Data;
+
+@Data
 public class JwtResponse {
-
-    private final String token;
-    private final String type;
-
-    public JwtResponse(String token, String type) {
-        this.token = token;
-        this.type = type;
-    }
+    private String token;
+    private String type = "Bearer";
 
     public JwtResponse(String token) {
-        this(token, "Bearer");
+        this.token = token;
     }
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-    public String getToken() {
-        return token;
-    }
-
-    public String getType() {
-        return type;
-    }
+@Data
+@AllArgsConstructor
+public class JwtResponse {
+    private String token;
+    private String type = "Bearer";
 }
