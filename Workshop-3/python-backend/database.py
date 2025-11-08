@@ -4,67 +4,36 @@ from __future__ import annotations
 
 import os
 from typing import Dict
-from urllib.parse import quote, urlparse, urlunparse
 
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy.engine import URL
+from sqlalchemy.engine.url import make_url
+from sqlalchemy.exc import ArgumentError
 
 load_dotenv()
-
-
-def _encode_component(value: str | None) -> str | None:
-    """Return a percent-encoded representation or ``None``."""
-
-    if value is None:
-        return None
-    # ``quote`` defaults to UTF-8, covering credentials with accents or spaces.
-    return quote(value, safe="")
 
 
 def _sanitize_database_url(database_url: str) -> str:
     """Percent-encode credentials and database names when needed."""
 
     try:
-        parsed = urlparse(database_url)
-    except ValueError:
+        url = make_url(database_url)
+    except ArgumentError:
         return database_url
 
-    if not parsed.scheme.startswith("postgresql"):
+    if not url.drivername.startswith("postgres"):
         return database_url
 
-    username = _encode_component(parsed.username)
-    password = _encode_component(parsed.password)
-    hostname = parsed.hostname or ""
-    port = f":{parsed.port}" if parsed.port else ""
-
-    userinfo = ""
-    if username is not None:
-        if password is not None:
-            userinfo = f"{username}:{password}@"
-        else:
-            userinfo = f"{username}@"
-    elif password is not None:
-        userinfo = f":{password}@"
-
-    if hostname and ":" in hostname and not hostname.startswith("["):
-        host_segment = f"[{hostname}]{port}"
-    else:
-        host_segment = f"{hostname}{port}"
-
-    path = parsed.path or ""
-    if path and path != "/":
-        path = "/" + quote(path.lstrip("/"), safe="")
-
-    return urlunparse(
-        (
-            parsed.scheme,
-            f"{userinfo}{host_segment}",
-            path,
-            parsed.params,
-            parsed.query,
-            parsed.fragment,
-        )
+    safe_url = url.set(
+        username=url.username,
+        password=url.password,
+        host=url.host,
+        port=url.port,
+        database=url.database,
+        query=url.query,
     )
+    return safe_url.render_as_string(hide_password=False)
 
 
 def _build_database_url() -> str:
@@ -84,11 +53,20 @@ def _build_database_url() -> str:
     password = os.getenv("DB_PASSWORD", "admon")
     database = os.getenv("DB_NAME", "parking")
     port = os.getenv("DB_PORT", "5432")
-    safe_user = _encode_component(user) or ""
-    safe_password = _encode_component(password) or ""
-    safe_database = _encode_component(database) or ""
-    credentials = f"{safe_user}:{safe_password}" if safe_password else safe_user
-    return f"postgresql://{credentials}@{host}:{port}/{safe_database}"
+    try:
+        numeric_port = int(port)
+    except (TypeError, ValueError):
+        numeric_port = None
+
+    url = URL.create(
+        "postgresql",
+        username=user,
+        password=password,
+        host=host,
+        port=numeric_port,
+        database=database,
+    )
+    return url.render_as_string(hide_password=False)
 
 
 def _build_connect_args(database_url: str) -> Dict[str, object]:
@@ -96,7 +74,7 @@ def _build_connect_args(database_url: str) -> Dict[str, object]:
 
     if database_url.startswith("sqlite"):
         return {"check_same_thread": False}
-    if database_url.startswith("postgresql"):
+    if database_url.startswith("postgres"):
         # Ensure psycopg2 interprets all identifiers using UTF-8.
         return {"options": "-c client_encoding=UTF8"}
     return {}
