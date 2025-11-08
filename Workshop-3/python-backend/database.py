@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, Sequence
 from typing import Dict
+from urllib.parse import quote, unquote
 
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
@@ -12,6 +14,68 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import ArgumentError
 
 load_dotenv()
+
+
+def _quote_component(value: str | None, *, safe: str = "") -> str | None:
+    """Return a percent-encoded version of a URL component."""
+
+    if value is None:
+        return None
+    # Normalise any pre-existing escapes before applying percent-encoding.
+    return quote(unquote(value), safe=safe)
+
+
+def _build_query_string(query: Mapping[str, object]) -> str:
+    """Serialise a SQLAlchemy query mapping using percent-encoding."""
+
+    if not query:
+        return ""
+
+    segments: list[str] = []
+    for raw_key, raw_value in query.items():
+        key = quote(unquote(str(raw_key)), safe="")
+
+        values: Sequence[object]
+        if isinstance(raw_value, Sequence) and not isinstance(raw_value, (str, bytes)):
+            values = raw_value
+        else:
+            values = (raw_value,)
+
+        for value in values:
+            text = "" if value is None else str(value)
+            encoded = quote(unquote(text), safe="")
+            segments.append(f"{key}={encoded}")
+
+    return "?" + "&".join(segments)
+
+
+def _render_postgres_url(url: URL) -> str:
+    """Render a PostgreSQL URL ensuring credentials are ASCII safe."""
+
+    username = _quote_component(url.username)
+    password = _quote_component(url.password)
+    database = _quote_component(url.database)
+
+    auth = ""
+    if username is not None:
+        auth = username
+        if password is not None:
+            auth = f"{auth}:{password}"
+        auth += "@"
+
+    host = url.host or ""
+    if host:
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+        auth += host
+
+    if url.port is not None:
+        auth += f":{url.port}"
+
+    path = f"/{database}" if database is not None else ""
+    query = _build_query_string(url.query)
+
+    return f"{url.drivername}://{auth}{path}{query}"
 
 
 def _sanitize_database_url(database_url: str) -> str:
@@ -25,15 +89,7 @@ def _sanitize_database_url(database_url: str) -> str:
     if not url.drivername.startswith("postgres"):
         return database_url
 
-    safe_url = url.set(
-        username=url.username,
-        password=url.password,
-        host=url.host,
-        port=url.port,
-        database=url.database,
-        query=url.query,
-    )
-    return safe_url.render_as_string(hide_password=False)
+    return _render_postgres_url(url)
 
 
 def _build_database_url() -> str:
@@ -66,7 +122,7 @@ def _build_database_url() -> str:
         port=numeric_port,
         database=database,
     )
-    return url.render_as_string(hide_password=False)
+    return _render_postgres_url(url)
 
 
 def _build_connect_args(database_url: str) -> Dict[str, object]:
