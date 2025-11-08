@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from typing import Dict
 from urllib.parse import quote_plus, urlparse, urlunparse
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine
@@ -72,6 +73,7 @@ def _build_database_url() -> str:
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         return _sanitize_database_url(database_url)
+        return database_url
 
     host = os.getenv("DB_HOST", "localhost")
     user = os.getenv("DB_USER", "admon")
@@ -81,6 +83,9 @@ def _build_database_url() -> str:
     safe_user = quote_plus(user, safe="%")
     safe_password = quote_plus(password, safe="%")
     safe_database = quote_plus(database, safe="%")
+    safe_user = quote_plus(user)
+    safe_password = quote_plus(password)
+    safe_database = quote_plus(database)
     return f"postgresql://{safe_user}:{safe_password}@{host}:{port}/{safe_database}"
 
 
