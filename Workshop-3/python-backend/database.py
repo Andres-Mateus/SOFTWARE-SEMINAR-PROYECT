@@ -29,7 +29,7 @@ def _sanitize_database_url(database_url: str) -> str:
     except ValueError:
         return database_url
 
-    if not parsed.scheme.startswith("postgresql"):
+    if not parsed.scheme.startswith("postgres"):
         return database_url
 
     username = _encode_component(parsed.username)
@@ -96,7 +96,7 @@ def _build_connect_args(database_url: str) -> Dict[str, object]:
 
     if database_url.startswith("sqlite"):
         return {"check_same_thread": False}
-    if database_url.startswith("postgresql"):
+    if database_url.startswith("postgres"):
         # Ensure psycopg2 interprets all identifiers using UTF-8.
         return {"options": "-c client_encoding=UTF8"}
     return {}
