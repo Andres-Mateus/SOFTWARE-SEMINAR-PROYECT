@@ -1,0 +1,87 @@
+\section{Results and Discussion}
+
+Since the project is still in the development phase, it has not yet been tested or trialed in a real-world setting. However, the testing will be conducted in several stages to ensure that the system meets the requirements for performance, usability, and reliability. This section outlines the proposed approach for the evaluation of the system.
+
+\subsection{Testing Methodology}
+
+To ensure the effectiveness of the parking management system, the following testing phases will be carried out:
+
+\begin{itemize}
+    \item \textbf{Unit Testing}: 
+    \begin{itemize}
+        \item \textbf{Objective}: Verify that individual components (both frontend and backend) work as expected in isolation. Each function, such as vehicle registration, receipt generation, and database communication, will be tested separately.
+        \item \textbf{Approach}: Automated tests will be written to test the core functionalities of each module. For example, testing the logic behind vehicle entry and exit times, ensuring that the receipts are calculated correctly, and verifying database interactions (insert and retrieve operations).
+    \end{itemize}
+    
+    \item \textbf{Integration Testing}: 
+    \begin{itemize}
+        \item \textbf{Objective}: Test the interactions between the frontend, backend, and database to ensure seamless communication and data consistency.
+        \item \textbf{Approach}: The system's major workflows, such as registering a vehicle entry or generating a receipt, will be tested end-to-end. The backend and frontend will be tested together to check if the data flows correctly between them and if the database is updated in real time.
+    \end{itemize}
+
+    \item \textbf{Acceptance Testing}:
+    \begin{itemize}
+        \item \textbf{Objective}: Ensure that the system meets the expected user requirements and performs well under real-world conditions.
+        \item \textbf{Approach}: This phase will involve testing the system with parking attendants (the primary users). The system’s usability will be assessed based on how easy it is for the attendants to:
+        \begin{itemize}
+            \item Register vehicle entries and exits.
+            \item Generate and print receipts.
+            \item View parking space availability in real-time.
+        \end{itemize}
+        Feedback from the attendants will be gathered to identify any issues related to the user interface or the system’s functionality.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Performance Testing}
+
+After the system has been integrated and tested for functionality, the following performance tests will be conducted to ensure that the system is efficient and scalable:
+
+\begin{itemize}
+    \item \textbf{Load Testing}:
+    \begin{itemize}
+        \item \textbf{Objective}: Simulate a high volume of vehicle entries and exits to assess the system’s ability to handle traffic without degradation in performance.
+        \item \textbf{Approach}: The system will be tested with varying levels of concurrent users and data input (e.g., multiple vehicle registrations at the same time). We will monitor response times and server load under different scenarios to ensure that the system performs well under stress.
+    \end{itemize}
+
+    \item \textbf{Response Time Measurement}:
+    \begin{itemize}
+        \item \textbf{Objective}: Measure the time it takes for the system to process key operations, such as registering an entry, generating a receipt, and querying the database for vehicle data.
+        \item \textbf{Approach}: Average response times will be calculated for critical actions, and the system will be optimized for minimal latency.
+    \end{itemize}
+
+    \item \textbf{Error Handling and Recovery}:
+    \begin{itemize}
+        \item \textbf{Objective}: Ensure that the system can recover gracefully from unexpected issues, such as database failures, network disruptions, or invalid input.
+        \item \textbf{Approach}: Simulate various failure scenarios to verify that the system can handle errors without crashing and that it can recover quickly.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Usability Testing}
+
+\begin{itemize}
+    \item \textbf{User Experience (UX)}:
+    \begin{itemize}
+        \item \textbf{Objective}: Evaluate how intuitive and easy the system is to use for parking attendants.
+        \item \textbf{Approach}: Conduct usability tests by asking parking attendants to perform typical tasks (e.g., register a vehicle entry, generate a receipt). Their feedback will be used to improve the user interface and workflow.
+    \end{itemize}
+
+    \item \textbf{User Interface (UI) Evaluation}:
+    \begin{itemize}
+        \item \textbf{Objective}: Assess the layout, design, and ease of navigation of the frontend interface.
+        \item \textbf{Approach}: Attendants will rate the clarity of the interface, ease of finding necessary features, and general satisfaction with the visual design. Issues related to the UI will be identified and addressed.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Future Testing and Rollout}
+
+Upon completion of the initial testing, the system will be deployed in a controlled environment (a small parking lot or a simulated environment) for \textbf{pilot testing}. The results from this trial will help to fine-tune the system before it is deployed on a larger scale. This phase will focus on:
+
+\begin{itemize}
+    \item \textbf{System stability}: Ensuring that the system can operate continuously for extended periods without failures.
+    \item \textbf{Real-world performance}: Measuring how the system handles typical parking lot traffic and various edge cases.
+    \item \textbf{User feedback}: Gathering further feedback from parking attendants and facility managers to ensure that the system meets operational needs.
+\end{itemize}
+
+\subsection{Conclusion of Testing Approach}
+
+The success of the parking management system will depend on the thoroughness of the testing process. The tests outlined in this section will ensure that the system is functional, scalable, and user-friendly. The feedback obtained from the testing phases will be used to continuously improve the system, addressing any identified issues and refining the user experience. Once the system is fully tested and optimized, it will be ready for broader deployment in a variety of parking lots.

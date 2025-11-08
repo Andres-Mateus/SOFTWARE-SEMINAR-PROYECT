@@ -1,0 +1,73 @@
+\section{Deployment Diagram}
+
+This diagram on the figure \ref{Deployment-Diagram} illustrates how the Parking Lot System components are organized and deployed in an on-premises environment.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{deployment-diagram/Deploy.png}
+    \label{Deployment-Diagram}
+    \caption{Deployment Diagram}
+\end{figure}
+
+\subsection{Terminal Machine}
+    \subsubsection{User Interface Component (UI)}
+        \textbf{Purpose:} Desktop application interface for parking attendants\\
+        \textbf{Function:}
+        \begin{itemize}
+            \item Vehicle entry/exit registration forms
+            \item Ticket management screens
+            \item Real-time space availability display
+            \item Payment processing interface
+        \end{itemize}
+
+    \subsubsection{Vehicle Manager Component (VM)}
+        \textbf{Purpose:} Handle all vehicle-related operations\\
+        \textbf{Function:}
+
+        \begin{itemize}
+            \item Vehicle registration and validation
+            \item License plate processing
+            \item Entry/exit time recording
+            \item Vehicle data management
+        \end{itemize}
+
+    \subsubsection{Parking Ticket Manager Component (PTM)}
+        \textbf{Purpose:} Manage ticket lifecycle operations\\
+        \textbf{Function:}
+        \begin{itemize}
+            \item Ticket issuance and printing
+            \item Ticket validation and closure
+            \item Ticket status tracking
+        \end{itemize}
+
+\subsection{Application Server Layer}
+
+\subsubsection{Parking Lot Manager Component (PLM)}
+    \textbf{Purpose:} Core parking lot management logic\\
+    \textbf{Function:}
+
+    \begin{itemize}
+        \item Space allocation and reservation
+        \item Availability monitoring
+        \item Capacity management
+        \item Space inventory tracking
+    \end{itemize}
+\subsubsection{Billing Service Component (BS)}
+    \textbf{Purpose:} Handle all financial calculations and transactions\\
+    \textbf{Function:}
+
+    \begin{itemize}
+        \item Parking fee calculations based on duration
+        \item Rate management (hourly/daily rates)
+        \item Payment processing logic
+        \item Receipt generation
+    \end{itemize}
+\subsubsection{Data Access Layer Component (DAL)}
+    \textbf{Purpose:} Database communication abstraction\\
+    \textbf{Function:}
+    \begin{itemize}
+        \item SQL query execution
+        \item Data validation and sanitization
+        \item Connection pooling management
+        \item Transaction handling
+    \end{itemize}

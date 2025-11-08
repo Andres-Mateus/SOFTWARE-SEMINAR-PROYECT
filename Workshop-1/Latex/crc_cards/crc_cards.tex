@@ -1,0 +1,131 @@
+\section{CRC Cards}
+
+\begin{tabular}{|p{0.5\textwidth}|p{0.2\textwidth}|}
+    \hline
+    \textbf{Class} & Vehicle\\
+    \hline
+    \textbf{Responsibilities} & \textbf{Collaborators}\\
+    \hline
+    \begin{tabular}{p{\textwidth}}
+         Known its own license plate\\
+         Known its own car type\\
+         Known its own brand\\
+         Known its user owner\\
+         \\
+    \end{tabular}
+     &
+    \begin{tabular}{p{\textwidth}}
+        Slot \\
+        User \\
+        Register \\
+    \end{tabular}  \\
+    \hline
+\end{tabular}\\\\
+
+\begin{tabular}{|p{0.5\textwidth}|p{0.2\textwidth}|}
+    \hline
+    \textbf{Class} & User\\
+    \hline
+    \textbf{Responsibilities} & \textbf{Collaborators}\\
+    \hline
+    \begin{tabular}{p{8.5cm}}
+        Known its own id \\
+        Known its user type \\
+        Manage associated cars \\
+        Known its own brand \\
+        Known its user owner \\
+    \end{tabular}
+     &
+    \begin{tabular}{p{4.5cm}}
+        Slot \\
+        Vehicle \\
+        Register \\
+    \end{tabular}  \\
+    \hline
+\end{tabular}\\\\
+
+\begin{tabular}{|p{0.5\textwidth}|p{0.2\textwidth}|}
+    \hline
+    \textbf{Class} & Fee\\
+    \hline
+    \textbf{Responsibilities} & \textbf{Collaborators}\\
+    \hline
+    \begin{tabular}{p{8.5cm}}
+        Known prices per hour \\
+        Known prices by vehicle type \\
+        Known special fees by user \\
+        Apply discounts by user type \\
+    \end{tabular}
+     &
+    \begin{tabular}{p{4.5cm}}
+        User \\
+        Register \\
+    \end{tabular}  \\
+    \hline
+\end{tabular}\\\\
+
+\begin{tabular}{|p{0.5\textwidth}|p{0.2\textwidth}|}
+    \hline
+    \textbf{Class} & Register\\
+    \hline
+    \textbf{Responsibilities} & \textbf{Collaborators}\\
+    \hline
+    \begin{tabular}{p{8.5cm}}
+        Register vehicule entry \\
+        Register vehicule departure \\
+        Calculate vehicule parking time \\
+        Calculete cost \\
+        Apply user discounts \\
+        Generate ticket \\
+    \end{tabular}
+     &
+    \begin{tabular}{p{4.5cm}}
+        Vehicle \\
+        User \\
+        Fee \\
+        slot \\
+    \end{tabular}  \\
+    \hline
+\end{tabular}\\\\
+
+\begin{tabular}{|p{0.5\textwidth}|p{0.2\textwidth}|}
+    \hline
+    \textbf{Class} & Slot\\
+    \hline
+    \textbf{Responsibilities} & \textbf{Collaborators}\\
+    \hline
+    \begin{tabular}{p{8.5cm}}
+        Know its own id \\
+        Know if it's free \\
+        Know its own slot type \\
+        Reserve \\
+        Get empty \\
+    \end{tabular}
+     &
+    \begin{tabular}{p{4.5cm}}
+        Vehicle \\
+        Register \\
+        Area \\
+    \end{tabular}  \\
+    \hline
+\end{tabular}\\\\
+
+\begin{tabular}{|p{0.5\textwidth}|p{0.2\textwidth}|}
+    \hline
+    \textbf{Class} & Area\\
+    \hline
+    \textbf{Responsibilities} & \textbf{Collaborators}\\
+    \hline
+    \begin{tabular}{p{8.5cm}}
+        Know its own id \\
+        Know its own name \\
+        Know its own capacity \\
+        Know its own slots disponibility \\
+    \end{tabular}
+     &
+    \begin{tabular}{p{4.5cm}}
+        Slot \\
+        Register \\
+    \end{tabular}  \\
+    \hline
+\end{tabular}\\\\
