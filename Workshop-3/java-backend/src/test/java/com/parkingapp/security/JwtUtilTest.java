@@ -10,7 +10,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(classes = JwtUtil.class)
 @TestPropertySource(properties = {
-        "app.jwt.secret=test-secret-value",
+        "app.jwt.secret=0123456789ABCDEF0123456789ABCDEF",
         "app.jwt.expiration-ms=3600000"
 })
 class JwtUtilTest {
