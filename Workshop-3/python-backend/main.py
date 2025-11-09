@@ -1,5 +1,3 @@
-"""FastAPI application exposing the parking core service."""
-
 """FastAPI entry point for the Workshop 3 core service."""
 
 from __future__ import annotations
