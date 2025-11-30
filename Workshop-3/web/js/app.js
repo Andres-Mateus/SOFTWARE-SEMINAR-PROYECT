@@ -214,7 +214,7 @@ if (registerForm) {
       }, 1500)
     } catch (err) {
       registerError.textContent =
-        'Registration failed. Invalid/used access code or server error.'
+        'Registration failed. Please verify your data or try again later.'
     }
   })
 }
