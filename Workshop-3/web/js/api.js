@@ -32,6 +32,32 @@ async function apiFetch(url, options = {}) {
   return response
 }
 
+async function handleResponse(response, fallbackMessage = 'Request failed') {
+  const raw = await response.text()
+  let data = null
+
+  if (raw) {
+    try {
+      data = JSON.parse(raw)
+    } catch (_) {
+      data = raw
+    }
+  }
+
+  if (!response.ok) {
+    const detail =
+      (data && typeof data === 'object'
+        ? data.detail || data.message || data.error
+        : null) || (typeof data === 'string' ? data : null)
+
+    const error = new Error(detail || fallbackMessage)
+    error.status = response.status
+    throw error
+  }
+
+  return data
+}
+
 // Login contra auth-service
 async function loginRequest(email, password) {
   const res = await fetch(`${AUTH_API_URL}/login`, {
@@ -40,6 +66,8 @@ async function loginRequest(email, password) {
     body: JSON.stringify({ email, password })
   })
 
+  // Se espera: { access_token, user: { id, username, email } }
+  return handleResponse(res, 'Login failed')
   if (!res.ok) {
     throw new Error('Login failed')
   }
@@ -56,21 +84,13 @@ async function registerRequest(username, email, password) {
     body: JSON.stringify({ username, email, password })
   })
 
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || 'Registration failed')
-  }
-
-  return res.json()
+  return handleResponse(res, 'Registration failed')
 }
 
 // Obtiene estadísticas generales para el dashboard
 async function getOverviewStats() {
   const res = await apiFetch(`${CORE_API_URL}/stats/overview`)
-  if (!res.ok) {
-    throw new Error('Error fetching stats')
-  }
-  return res.json()
+  return handleResponse(res, 'Error fetching stats')
 }
 
 // Obtiene sesiones recientes (para actividad)
@@ -78,19 +98,13 @@ async function getRecentSessions(limit = 5) {
   const res = await apiFetch(
     `${CORE_API_URL}/sessions?limit=${limit}&order=desc`
   )
-  if (!res.ok) {
-    throw new Error('Error fetching sessions')
-  }
-  return res.json()
+  return handleResponse(res, 'Error fetching sessions')
 }
 
 // Obtiene estado de slots
 async function getSlots() {
   const res = await apiFetch(`${CORE_API_URL}/slots`)
-  if (!res.ok) {
-    throw new Error('Error fetching slots')
-  }
-  return res.json()
+  return handleResponse(res, 'Error fetching slots')
 }
 
 // Registra entrada de vehículo
@@ -99,10 +113,7 @@ async function registerEntry(plate) {
     method: 'POST',
     body: JSON.stringify({ plate })
   })
-  if (!res.ok) {
-    throw new Error('Error registering entry')
-  }
-  return res.json()
+  return handleResponse(res, 'Error registering entry')
 }
 
 // Registra salida de vehículo
@@ -111,6 +122,7 @@ async function registerExit(plate) {
     method: 'POST',
     body: JSON.stringify({ plate })
   })
+  return handleResponse(res, 'Error registering exit')
   if (!res.ok) {
     throw new Error('Error registering exit')
   }
