@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+psycopg2-binary
+pytest
+python-dotenv
+bcrypt==4.1.2
+passlib[bcrypt]==1.7.4

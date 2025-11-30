@@ -1,0 +1,16 @@
+com\parkingapp\config\SecurityConfig.class
+com\parkingapp\service\impl\AuthServiceImpl.class
+com\parkingapp\controller\AuthController.class
+com\parkingapp\model\User.class
+com\parkingapp\security\CustomUserDetailsService.class
+com\parkingapp\dto\LoginRequest.class
+com\parkingapp\ParkingAppApplication.class
+com\parkingapp\dto\RegisterRequest.class
+com\parkingapp\config\DataInitializer.class
+com\parkingapp\repository\RoleRepository.class
+com\parkingapp\service\AuthService.class
+com\parkingapp\config\JwtAuthFilter.class
+com\parkingapp\repository\UserRepository.class
+com\parkingapp\security\JwtUtil.class
+com\parkingapp\dto\JwtResponse.class
+com\parkingapp\model\Role.class

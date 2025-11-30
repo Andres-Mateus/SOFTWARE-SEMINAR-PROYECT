@@ -1,0 +1,16 @@
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\config\DataInitializer.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\config\JwtAuthFilter.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\config\SecurityConfig.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\controller\AuthController.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\dto\JwtResponse.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\dto\LoginRequest.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\dto\RegisterRequest.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\model\Role.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\model\User.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\ParkingAppApplication.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\repository\RoleRepository.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\repository\UserRepository.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\security\CustomUserDetailsService.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\security\JwtUtil.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\service\AuthService.java
+C:\Users\User\OneDrive\Documentos\GitHub\SOFTWARE-ENGINEERING-SEMINAR\Docs\Workshops\Workshop-3\auth-service\src\main\java\com\parkingapp\service\impl\AuthServiceImpl.java

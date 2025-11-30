@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parqueadero Web - Administración</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Icono de la pestaña: mismo estilo que el logo de la navbar -->
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg" />
+
+  <!-- Estilos principales -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- NAVBAR SUPERIOR -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <!-- Logo circular con P -->
+      <div class="logo-circle">P</div>
+      <div class="logo-text">Parqueadero Web</div>
+
+      <!-- Navegación principal (se muestra solo si hay sesión) -->
+      <nav id="main-nav" class="nav-links hidden">
+        <a href="#" data-view="dashboard" class="nav-link active">Panel</a>
+        <a href="#" data-view="vehicles" class="nav-link">Vehículos</a>
+      </nav>
+    </div>
+
+    <div class="navbar-right">
+      <!-- Botón para ir al login (visible sin sesión) -->
+      <button id="login-nav-btn" class="btn btn-accent">Iniciar Sesión</button>
+      <!-- Botón cerrar sesión (visible con sesión) -->
+      <button id="logout-btn" class="btn btn-danger hidden">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="page-container">
+    <!-- SECCIÓN LOGIN -->
+    <section id="login-section" class="card login-card">
+      <h1>Iniciar Sesión</h1>
+      <p class="subtitle">
+        Acceso para administradores y operadores del sistema de parqueadero.
+      </p>
+
+      <form id="login-form" class="form">
+        <label>
+          Correo
+          <input
+            type="email"
+            id="login-email"
+            class="input"
+            placeholder="admin@parqueadero.com"
+            required
+          />
+        </label>
+
+        <label>
+          Contraseña
+          <input
+            type="password"
+            id="login-password"
+            class="input"
+            placeholder="••••••••"
+            required
+          />
+        </label>
+
+        <!-- Mensaje de error de login -->
+        <div id="login-error" class="form-error"></div>
+
+        <button type="submit" class="btn btn-primary full">
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <!-- Link para ir al registro con código -->
+      <p class="helper-text">
+        ¿Tienes un código único de acceso?
+        <a href="#" id="go-register" class="link-inline">Crea tu cuenta aquí.</a>
+      </p>
+    </section>
+
+    <!-- SECCIÓN REGISTRO CON CÓDIGO ÚNICO -->
+    <section id="register-section" class="card login-card hidden">
+      <h1>Crear Cuenta</h1>
+      <p class="subtitle">
+        Registra una nueva cuenta con un nombre de usuario único.
+      </p>
+
+      <form id="register-form" class="form">
+        <label>
+          Nombre de usuario
+          <input
+            type="text"
+            id="register-username"
+            class="input"
+            placeholder="Ej: operador01"
+            required
+          />
+        </label>
+
+        <label>
+          Email
+          <input
+            type="email"
+            id="register-email"
+            class="input"
+            placeholder="user@parking.com"
+            required
+          />
+        </label>
+
+        <label>
+          Password
+          <input
+            type="password"
+            id="register-password"
+            class="input"
+            placeholder="••••••••"
+            required
+          />
+        </label>
+
+        <!-- Mensajes de error / éxito -->
+        <div id="register-error" class="form-error"></div>
+        <div id="register-success" class="form-info"></div>
+
+        <button type="submit" class="btn btn-primary full">
+          Crear Cuenta
+        </button>
+      </form>
+
+      <p class="helper-text">
+        ¿Ya tienes una cuenta?
+        <a href="#" id="go-login" class="link-inline">Inicia sesión aquí.</a>
+      </p>
+      
+    </section>
+
+    <!-- SECCIÓN DE APLICACIÓN (SOLO CON SESIÓN) -->
+    <section id="app-section" class="hidden">
+      <!-- VISTA: DASHBOARD -->
+      <section id="dashboard-view" class="view">
+        <h1 class="page-title">Panel de Administración</h1>
+
+        <!-- KPIs principales -->
+        <div class="kpi-grid">
+          <div class="card kpi">
+            <div class="kpi-value" id="kpi-occupied">-</div>
+            <div class="kpi-label">Espacios Ocupados</div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-value" id="kpi-free">-</div>
+            <div class="kpi-label">Espacios Libres</div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-value" id="kpi-rate">-</div>
+            <div class="kpi-label">Tarifa Actual</div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-value" id="kpi-active">-</div>
+            <div class="kpi-label">Vehículos Activos</div>
+          </div>
+        </div>
+
+        <!-- Ocupación + actividad reciente -->
+        <div class="grid-2">
+          <div class="card">
+            <h2>Ocupación Promedio (24h)</h2>
+            <p class="muted">
+              Basado en las estadísticas obtenidas desde el core-service.
+            </p>
+            <div class="bar-wrapper">
+              <div id="occupancy-bar" class="bar-fill" style="width: 0%"></div>
+            </div>
+            <div id="occupancy-label" class="bar-label">-</div>
+          </div>
+
+          <div class="card">
+            <h2>Actividad Reciente</h2>
+            <ul id="recent-activity" class="activity-list">
+              <li class="muted">Sin datos aún.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA: GESTIÓN DE VEHÍCULOS -->
+      <section id="vehicles-view" class="view hidden">
+        <h1 class="page-title">Gestión de Vehículos</h1>
+
+        <div class="grid-2-1">
+          <!-- Formulario entrada/salida -->
+          <div class="card">
+            <h2>Registro de Entrada/Salida</h2>
+            <form id="vehicle-form" class="form">
+              <!-- Selector de modo -->
+              <div class="toggle-group">
+                <label>
+                  <input type="radio" name="mode" value="entry" checked />
+                  Entrada
+                </label>
+                <label>
+                  <input type="radio" name="mode" value="exit" />
+                  Salida
+                </label>
+              </div>
+
+              <label>
+                Placa del Vehículo
+                <input
+                  type="text"
+                  id="vehicle-plate"
+                  class="input"
+                  placeholder="ABC-123"
+                  required
+                />
+              </label>
+
+              <!-- Mensaje de estado -->
+              <div id="vehicle-message" class="form-info"></div>
+
+              <button type="submit" class="btn btn-primary full">
+                Registrar
+              </button>
+            </form>
+          </div>
+
+          <!-- Actividad reciente (vehículos) -->
+          <div class="card">
+            <h2>Actividad Reciente</h2>
+            <ul id="recent-activity-vehicles" class="activity-list">
+              <li class="muted">Sin datos aún.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tabla de slots -->
+        <div class="card mt-20">
+          <h2>Estado del Estacionamiento</h2>
+          <div class="slots-header">
+            <span>Espacio</span>
+            <span>Estado</span>
+            <span>Placa</span>
+          </div>
+          <div id="slots-table" class="slots-body">
+            <div class="muted">Sin datos aún.</div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>Workshop-3 · Sistema de Gestión de Parqueadero</div>
+    <div class="footer-right">
+      HTML + CSS + JS · Integrado con Auth & Core Services
+    </div>
+  </footer>
+
+  <!-- Scripts principales -->
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
