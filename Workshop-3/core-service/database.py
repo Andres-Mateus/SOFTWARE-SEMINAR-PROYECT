@@ -1,47 +1,26 @@
-"""
-The script funcion is connect the PostgreSQL DB with the core-service using pyscopg2
-"""
+from contextlib import contextmanager
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-import psycopg2
-from psycopg2 import sql
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://admon:admon@localhost:5432/parking",
+)
+
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+Base = declarative_base()
 
 
-def try_connection():
-    host = "localhost"
-    user = "admon"
-    password = "admon"
-    database = "parking"
+@contextmanager
+def get_session():
+    session = SessionLocal()
     try:
-        conecction = psycopg2.connect(
-            host="localhost", database=database, user=user, password=password
-        )
-        cursor = conecction.cursor()
-        cursor.execute("SELECT version()")
-        row = cursor.fetchone()
-        return f"Connected succesfully: {row}"
-    except Exception as ex:
-        return f"Connection Fail: {ex}"
-
-
-def get_connection():
-    host = "localhost"
-    user = "admon"
-    password = "admon"
-    database = "parking"
-    return psycopg2.connect(
-        host="localhost", database=database, user=user, password=password
-    )
-
-
-def run_query(query, params=None, fetch=False):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(query, params or ())
-    if fetch:
-        result = cur.fetchall()
-    else:
-        result = None
-    conn.commit()
-    cur.close()
-    conn.close()
-    return result
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
