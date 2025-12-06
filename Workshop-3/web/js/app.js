@@ -68,6 +68,28 @@ function formatDateTime(value) {
   return isNaN(date.getTime()) ? value : date.toLocaleString('es-ES')
 }
 
+function formatPlate(raw) {
+  const cleaned = (raw || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 6)
+
+  const letters = cleaned.slice(0, 3).replace(/[^A-Z]/g, '')
+  const numbers = cleaned.slice(letters.length, 6).replace(/[^0-9]/g, '')
+  const finalLetters = (letters + cleaned.slice(letters.length, 3)).slice(0, 3)
+  const finalNumbers = numbers.slice(0, 3)
+
+  if (finalLetters.length === 3 && finalNumbers.length) {
+    return `${finalLetters}-${finalNumbers}`.slice(0, 7)
+  }
+
+  return (finalLetters + (finalNumbers ? `-${finalNumbers}` : '')).slice(0, 7)
+}
+
+function isValidPlate(plate) {
+  return /^[A-Z]{3}-\d{3}$/.test(plate)
+}
+
 // ---- CONTROL DE VISTAS ----
 
 // Muestra login y oculta todo lo demás
@@ -300,16 +322,22 @@ async function loadVehiclesData() {
 // ---- REGISTRO ENTRADA / SALIDA ----
 
 if (vehicleForm) {
+  if (vehiclePlateInput) {
+    vehiclePlateInput.addEventListener('input', (e) => {
+      e.target.value = formatPlate(e.target.value)
+    })
+  }
+
   vehicleForm.addEventListener('submit', async (e) => {
     e.preventDefault()
     vehicleMessage.textContent = ''
 
-    const plate = vehiclePlateInput.value.trim().toUpperCase()
+    const plate = formatPlate(vehiclePlateInput.value)
     const mode = [...vehicleForm.elements['mode']].find((r) => r.checked)
       .value
 
-    if (!plate) {
-      vehicleMessage.textContent = 'Ingrese una placa válida.'
+    if (!isValidPlate(plate)) {
+      vehicleMessage.textContent = 'Formato inválido. Usa ABC-123.'
       return
     }
 
@@ -329,6 +357,7 @@ if (vehicleForm) {
             ? `$${res.amount.toFixed(2)}`
             : '$0.00'
         vehicleMessage.textContent = `Salida registrada. ${minutes} min · Total ${amount}.`
+        showReceipt(res)
       }
 
       vehiclePlateInput.value = ''
@@ -360,6 +389,61 @@ function renderRecentActivity(listElement, sessions) {
     li.textContent = `${s.plate} · ${type} · ${time}`
     listElement.appendChild(li)
   })
+}
+
+function showReceipt(data) {
+  const receiptWindow = window.open('', '_blank', 'width=520,height=680')
+  if (!receiptWindow) return
+
+  const plate = data.plate || ''
+  const slot = data.slot || data.slot_code || '-'
+  const checkIn = formatDateTime(data.check_in_at || data.check_in)
+  const checkOut = formatDateTime(data.check_out_at || data.check_out)
+  const rateHour = Number(data.rate_per_hour || (data.rate_per_minute || 0) * 60)
+  const amount = Number(data.amount || 0)
+
+  const logo = '/images/favicon.svg'
+  receiptWindow.document.write(`
+    <html>
+      <head>
+        <title>Recibo de Salida</title>
+        <style>
+          body { font-family: 'Inter', Arial, sans-serif; margin: 24px; color: #1f2937; }
+          .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+          .brand .logo { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+          .receipt { border: 1px solid #e5e7eb; padding: 16px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+          h1 { margin: 0 0 4px 0; font-size: 20px; }
+          h2 { margin: 8px 0 12px 0; font-size: 16px; color: #4b5563; }
+          .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e5e7eb; }
+          .row:last-child { border-bottom: none; }
+          .label { color: #6b7280; font-size: 13px; }
+          .value { font-weight: 600; }
+          .total { font-size: 18px; margin-top: 12px; }
+          .btn-print { margin-top: 16px; padding: 10px 14px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+          .btn-print:hover { background: #1d4ed8; }
+        </style>
+      </head>
+      <body>
+        <div class="brand">
+          <div class="logo"><img src="${logo}" alt="Logo" onerror="this.parentElement.textContent='P'" style="width:100%;height:100%;object-fit:contain;border-radius:50%;" /></div>
+          <div>
+            <h1>Parqueadero Web</h1>
+            <div style="color:#6b7280; font-size:13px;">Recibo de salida</div>
+          </div>
+        </div>
+        <div class="receipt">
+          <div class="row"><div class="label">Placa</div><div class="value">${plate}</div></div>
+          <div class="row"><div class="label">Espacio</div><div class="value">${slot}</div></div>
+          <div class="row"><div class="label">Entrada</div><div class="value">${checkIn}</div></div>
+          <div class="row"><div class="label">Salida</div><div class="value">${checkOut}</div></div>
+          <div class="row"><div class="label">Tarifa por hora</div><div class="value">$${rateHour.toFixed(2)}</div></div>
+          <div class="row total"><div class="label">Total cobrado</div><div class="value">$${amount.toFixed(2)}</div></div>
+          <button class="btn-print" onclick="window.print()">Generar Recibo</button>
+        </div>
+      </body>
+    </html>
+  `)
+  receiptWindow.document.close()
 }
 
 // ---- ESTADO INICIAL ----

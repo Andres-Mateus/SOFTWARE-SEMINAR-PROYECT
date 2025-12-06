@@ -1,13 +1,16 @@
 from contextlib import contextmanager
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DEFAULT_PRIMARY = "postgresql+psycopg2://admon:admon@localhost:5432/parking"
-DEFAULT_SECONDARY = "postgresql+psycopg2://postgres:12345@localhost:5432/parking"
-DEFAULT_SQLITE = "sqlite:///./parking.db"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://admon:admon@localhost:5432/parking",
+)
 
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+Base = declarative_base()
 
 def build_engine():
     # 1) URL de entorno si existe
@@ -51,7 +54,7 @@ def get_session():
     try:
         yield session
         session.commit()
-    except SQLAlchemyError:
+    except Exception:
         session.rollback()
         raise
     finally:
