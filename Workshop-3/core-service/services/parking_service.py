@@ -38,6 +38,8 @@ def get_overview(session: Session):
         "currentRatePerMinute": rate_minute,
         "rate_per_minute": rate_minute,
         "rate_per_hour": rate_hour,
+        "occupancyPercent": round(occupancy_percent, 2),
+        "currentRatePerMinute": RATE_PER_MINUTE,
     }
 
 
@@ -72,12 +74,14 @@ def register_entry(session: Session, plate: str) -> ParkingSession:
     free_slot = session.scalars(select(Slot).where(Slot.occupied.is_(False)).order_by(Slot.code)).first()
     if not free_slot:
         raise ValueError("NO_SLOTS")
+        raise ValueError("No slots available")
 
     free_slot.occupied = True
     new_session = ParkingSession(
         plate=plate,
         slot=free_slot,
         check_in_at=datetime.now(timezone.utc),
+        check_in_at=datetime.now(timezone.utc)
     )
     session.add(new_session)
     return new_session
@@ -89,6 +93,7 @@ def register_exit(session: Session, plate: str) -> ParkingSession:
     ).first()
     if not parking_session:
         raise ValueError("ACTIVE_SESSION_NOT_FOUND")
+        raise ValueError("Active session not found")
 
     now = datetime.now(timezone.utc)
     parking_session.check_out_at = now

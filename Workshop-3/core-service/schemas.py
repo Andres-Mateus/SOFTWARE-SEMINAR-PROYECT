@@ -20,6 +20,8 @@ class SessionOut(BaseModel):
     check_in: datetime | None = None
     check_out_at: Optional[datetime] = None
     check_out: Optional[datetime] = None
+    check_in_at: datetime
+    check_out_at: Optional[datetime] = None
     amount: Optional[float] = None
 
 
@@ -33,6 +35,8 @@ class StatsOut(BaseModel):
     currentRatePerMinute: float
     rate_per_minute: float
     rate_per_hour: float
+    occupancyPercent: float
+    currentRatePerMinute: float
 
 
 class EntryRequest(BaseModel):
@@ -49,6 +53,7 @@ class EntryResponse(BaseModel):
     slot: str | None = None
     check_in_at: datetime
     check_in: datetime | None = None
+    check_in_at: datetime
 
 
 class ExitResponse(BaseModel):
@@ -59,3 +64,6 @@ class ExitResponse(BaseModel):
     amount: float
     check_out_at: datetime
     check_out: datetime | None = None
+    minutes: int
+    amount: float
+    check_out_at: datetime

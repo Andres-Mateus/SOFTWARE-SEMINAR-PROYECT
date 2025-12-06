@@ -68,6 +68,12 @@ async function loginRequest(email, password) {
 
   // Se espera: { access_token, user: { id, username, email } }
   return handleResponse(res, 'Login failed')
+  if (!res.ok) {
+    throw new Error('Login failed')
+  }
+
+  // Se espera: { access_token, user: { id, username, email } }
+  return res.json()
 }
 
 // Registro de usuario
@@ -117,4 +123,8 @@ async function registerExit(plate) {
     body: JSON.stringify({ plate })
   })
   return handleResponse(res, 'Error registering exit')
+  if (!res.ok) {
+    throw new Error('Error registering exit')
+  }
+  return res.json()
 }

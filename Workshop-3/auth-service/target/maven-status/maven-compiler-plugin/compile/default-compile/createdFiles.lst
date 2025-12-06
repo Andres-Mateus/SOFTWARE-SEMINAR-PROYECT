@@ -9,8 +9,6 @@ com\parkingapp\dto\RegisterRequest.class
 com\parkingapp\config\DataInitializer.class
 com\parkingapp\repository\RoleRepository.class
 com\parkingapp\service\AuthService.class
-com\parkingapp\config\JwtAuthFilter.class
 com\parkingapp\repository\UserRepository.class
 com\parkingapp\security\JwtUtil.class
-com\parkingapp\dto\JwtResponse.class
 com\parkingapp\model\Role.class

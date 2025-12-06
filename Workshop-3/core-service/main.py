@@ -63,6 +63,8 @@ def recent_sessions(limit: int = Query(5, ge=1, le=50), order: str = Query("desc
             check_in=s.check_in_at,
             check_out_at=s.check_out_at,
             check_out=s.check_out_at,
+            check_in_at=s.check_in_at,
+            check_out_at=s.check_out_at,
             amount=float(s.amount) if s.amount is not None else None,
         )
         for s in sessions
@@ -85,6 +87,9 @@ def entries(payload: EntryRequest, db: Session = Depends(get_db)):
     except ValueError as exc:
         if str(exc) == "NO_SLOTS":
             raise HTTPException(status_code=409, detail="No slots available")
+    try:
+        session = register_entry(db, payload.plate.upper())
+    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return EntryResponse(
         plate=session.plate,
@@ -92,6 +97,7 @@ def entries(payload: EntryRequest, db: Session = Depends(get_db)):
         slot=session.slot.code,
         check_in_at=session.check_in_at,
         check_in=session.check_in_at,
+        check_in_at=session.check_in_at,
     )
 
 
@@ -106,6 +112,9 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
     except ValueError as exc:
         if str(exc) == "ACTIVE_SESSION_NOT_FOUND":
             raise HTTPException(status_code=404, detail="Active session not found")
+    try:
+        session = register_exit(db, payload.plate.upper())
+    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
     minutes = max(1, int((session.check_out_at - session.check_in_at).total_seconds() // 60))
@@ -118,6 +127,9 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
         amount=amount,
         check_out_at=session.check_out_at,
         check_out=session.check_out_at,
+        minutes=minutes,
+        amount=amount,
+        check_out_at=session.check_out_at,
     )
 
 
