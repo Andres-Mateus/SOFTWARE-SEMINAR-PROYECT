@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
@@ -21,6 +22,8 @@ class ParkingSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     plate = Column(String(20), nullable=False)
     slot_id = Column(Integer, ForeignKey("slots.id"), nullable=False)
+    check_in_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    check_out_at = Column(DateTime(timezone=True))
     check_in_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     check_out_at = Column(DateTime)
     amount = Column(Numeric(10, 2))

@@ -25,10 +25,19 @@ def get_overview(session: Session):
     active_vehicles = session.scalar(select(func.count(ParkingSession.id)).where(ParkingSession.check_out_at.is_(None))) or 0
     occupancy_percent = (occupied / total_slots * 100) if total_slots else 0
 
+    rate_hour = round(RATE_PER_MINUTE * 60, 2)
+    rate_minute = RATE_PER_MINUTE
+
     return {
         "occupied": occupied,
         "free": max(free, 0),
         "activeVehicles": active_vehicles,
+        "active_sessions": active_vehicles,
+        "occupancyPercent": round(occupancy_percent, 2),
+        "occupancy_percent": round(occupancy_percent, 2),
+        "currentRatePerMinute": rate_minute,
+        "rate_per_minute": rate_minute,
+        "rate_per_hour": rate_hour,
         "occupancyPercent": round(occupancy_percent, 2),
         "currentRatePerMinute": RATE_PER_MINUTE,
     }
@@ -64,12 +73,14 @@ def register_entry(session: Session, plate: str) -> ParkingSession:
 
     free_slot = session.scalars(select(Slot).where(Slot.occupied.is_(False)).order_by(Slot.code)).first()
     if not free_slot:
+        raise ValueError("NO_SLOTS")
         raise ValueError("No slots available")
 
     free_slot.occupied = True
     new_session = ParkingSession(
         plate=plate,
         slot=free_slot,
+        check_in_at=datetime.now(timezone.utc),
         check_in_at=datetime.now(timezone.utc)
     )
     session.add(new_session)
@@ -81,6 +92,7 @@ def register_exit(session: Session, plate: str) -> ParkingSession:
         select(ParkingSession).where(ParkingSession.plate == plate, ParkingSession.check_out_at.is_(None))
     ).first()
     if not parking_session:
+        raise ValueError("ACTIVE_SESSION_NOT_FOUND")
         raise ValueError("Active session not found")
 
     now = datetime.now(timezone.utc)

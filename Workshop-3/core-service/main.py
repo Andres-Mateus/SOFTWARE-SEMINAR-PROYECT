@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_session
@@ -23,6 +24,14 @@ from services.parking_service import (
 )
 
 app = FastAPI(title="Parking Core Service", openapi_url="/api/core/openapi.json")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5500", "http://127.0.0.1:5500"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -49,6 +58,11 @@ def recent_sessions(limit: int = Query(5, ge=1, le=50), order: str = Query("desc
         SessionOut(
             plate=s.plate,
             slot_code=s.slot.code,
+            slot=s.slot.code,
+            check_in_at=s.check_in_at,
+            check_in=s.check_in_at,
+            check_out_at=s.check_out_at,
+            check_out=s.check_out_at,
             check_in_at=s.check_in_at,
             check_out_at=s.check_out_at,
             amount=float(s.amount) if s.amount is not None else None,
@@ -64,6 +78,15 @@ def slots(db: Session = Depends(get_db)):
 
 @app.post("/api/core/entries", response_model=EntryResponse)
 def entries(payload: EntryRequest, db: Session = Depends(get_db)):
+    plate = (payload.plate or "").strip().upper()
+    if not plate:
+        raise HTTPException(status_code=400, detail="Plate is required")
+
+    try:
+        session = register_entry(db, plate)
+    except ValueError as exc:
+        if str(exc) == "NO_SLOTS":
+            raise HTTPException(status_code=409, detail="No slots available")
     try:
         session = register_entry(db, payload.plate.upper())
     except ValueError as exc:
@@ -71,12 +94,24 @@ def entries(payload: EntryRequest, db: Session = Depends(get_db)):
     return EntryResponse(
         plate=session.plate,
         slot_code=session.slot.code,
+        slot=session.slot.code,
+        check_in_at=session.check_in_at,
+        check_in=session.check_in_at,
         check_in_at=session.check_in_at,
     )
 
 
 @app.post("/api/core/exits", response_model=ExitResponse)
 def exits(payload: ExitRequest, db: Session = Depends(get_db)):
+    plate = (payload.plate or "").strip().upper()
+    if not plate:
+        raise HTTPException(status_code=400, detail="Plate is required")
+
+    try:
+        session = register_exit(db, plate)
+    except ValueError as exc:
+        if str(exc) == "ACTIVE_SESSION_NOT_FOUND":
+            raise HTTPException(status_code=404, detail="Active session not found")
     try:
         session = register_exit(db, payload.plate.upper())
     except ValueError as exc:
@@ -87,6 +122,11 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
     return ExitResponse(
         plate=session.plate,
         slot_code=session.slot.code,
+        slot=session.slot.code,
+        minutes=minutes,
+        amount=amount,
+        check_out_at=session.check_out_at,
+        check_out=session.check_out_at,
         minutes=minutes,
         amount=amount,
         check_out_at=session.check_out_at,
