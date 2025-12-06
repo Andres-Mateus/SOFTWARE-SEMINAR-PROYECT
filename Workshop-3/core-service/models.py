@@ -19,10 +19,16 @@ class ParkingSession(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    plate = Column(String(20), nullable=False)
+    plate = Column(String(20), nullable=False, index=True)
     slot_id = Column(Integer, ForeignKey("slots.id"), nullable=False)
-    check_in_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    check_out_at = Column(DateTime(timezone=True))
+
+    check_in_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    check_out_at = Column(DateTime(timezone=True), nullable=True)
+
     amount = Column(Numeric(10, 2))
 
     slot = relationship("Slot", back_populates="sessions")

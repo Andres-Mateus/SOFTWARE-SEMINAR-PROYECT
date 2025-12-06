@@ -37,10 +37,19 @@ const recentActivity = document.getElementById('recent-activity')
 const vehicleForm = document.getElementById('vehicle-form')
 const vehiclePlateInput = document.getElementById('vehicle-plate')
 const vehicleMessage = document.getElementById('vehicle-message')
-const recentActivityVehicles = document.getElementById(
-  'recent-activity-vehicles'
-)
+const recentActivityVehicles = document.getElementById('recent-activity-vehicles')
 const slotsTable = document.getElementById('slots-table')
+
+// Modal Recibo (debe existir en index.html)
+const receiptModal = document.getElementById('receipt-modal')
+const receiptCloseBtn = document.getElementById('receipt-close-btn')
+
+// ---- FORMATTERS ----
+const COP = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  maximumFractionDigits: 0
+})
 
 // ---- HELPERS DE SESIÓN ----
 
@@ -48,9 +57,7 @@ const slotsTable = document.getElementById('slots-table')
 function setToken(token, user) {
   if (token) {
     localStorage.setItem('token', token)
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user))
-    }
+    if (user) localStorage.setItem('user', JSON.stringify(user))
   } else {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
@@ -65,9 +72,10 @@ function isAuthenticated() {
 function formatDateTime(value) {
   if (!value) return ''
   const date = new Date(value)
-  return isNaN(date.getTime()) ? value : date.toLocaleString('es-ES')
+  return isNaN(date.getTime()) ? String(value) : date.toLocaleString('es-CO')
 }
 
+// Formatea input a ABC-123 mientras escribe
 function formatPlate(raw) {
   const cleaned = (raw || '')
     .toUpperCase()
@@ -90,6 +98,25 @@ function isValidPlate(plate) {
   return /^[A-Z]{3}-\d{3}$/.test(plate)
 }
 
+function safeText(el, value) {
+  if (el) el.textContent = value
+}
+
+// Fallback por si el backend no envía minutes:
+// cobra por minuto completo (ceil), mínimo 1
+function computeMinutesFallback(checkInRaw, checkOutRaw) {
+  try {
+    const checkIn = new Date(checkInRaw)
+    const checkOut = new Date(checkOutRaw)
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) return 1
+    const diffMs = Math.max(0, checkOut.getTime() - checkIn.getTime())
+    const minutes = Math.ceil(diffMs / 60000)
+    return Math.max(1, minutes)
+  } catch (_) {
+    return 1
+  }
+}
+
 // ---- CONTROL DE VISTAS ----
 
 // Muestra login y oculta todo lo demás
@@ -97,22 +124,29 @@ function showLogin() {
   loginSection.classList.remove('hidden')
   registerSection.classList.add('hidden')
   appSection.classList.add('hidden')
+
   mainNav.classList.add('hidden')
-  logoutBtn.classList.add('hidden')
-  loginNavBtn.classList.remove('hidden')
-  loginError.textContent = ''
+
+  // ✅ visibilidad correcta de botones del banner
+  if (logoutBtn) logoutBtn.classList.add('hidden')
+  if (loginNavBtn) loginNavBtn.classList.remove('hidden')
+
+  if (loginError) loginError.textContent = ''
 }
 
-// Muestra registro con código único
+// Muestra registro
 function showRegister() {
   loginSection.classList.add('hidden')
   registerSection.classList.remove('hidden')
   appSection.classList.add('hidden')
+
   mainNav.classList.add('hidden')
-  logoutBtn.classList.add('hidden')
-  loginNavBtn.classList.remove('hidden')
-  registerError.textContent = ''
-  registerSuccess.textContent = ''
+
+  if (logoutBtn) logoutBtn.classList.add('hidden')
+  if (loginNavBtn) loginNavBtn.classList.remove('hidden')
+
+  if (registerError) registerError.textContent = ''
+  if (registerSuccess) registerSuccess.textContent = ''
 }
 
 // Muestra la app (dashboard/vehicles) cuando hay sesión
@@ -120,9 +154,12 @@ function showApp() {
   loginSection.classList.add('hidden')
   registerSection.classList.add('hidden')
   appSection.classList.remove('hidden')
+
   mainNav.classList.remove('hidden')
-  logoutBtn.classList.remove('hidden')
-  loginNavBtn.classList.add('hidden')
+
+  if (logoutBtn) logoutBtn.classList.remove('hidden')
+  if (loginNavBtn) loginNavBtn.classList.add('hidden')
+
   switchView('dashboard')
   loadDashboard()
 }
@@ -146,7 +183,6 @@ function switchView(view) {
 
 // ---- EVENTOS DE NAVEGACIÓN ----
 
-// Click en links del navbar (Panel / Vehículos)
 navLinks.forEach((link) => {
   link.addEventListener('click', (e) => {
     e.preventDefault()
@@ -154,7 +190,6 @@ navLinks.forEach((link) => {
   })
 })
 
-// Botón "Iniciar Sesión" de la navbar
 if (loginNavBtn) {
   loginNavBtn.addEventListener('click', (e) => {
     e.preventDefault()
@@ -162,7 +197,6 @@ if (loginNavBtn) {
   })
 }
 
-// Cambiar de Login a Register
 if (goRegisterLink) {
   goRegisterLink.addEventListener('click', (e) => {
     e.preventDefault()
@@ -170,7 +204,6 @@ if (goRegisterLink) {
   })
 }
 
-// Cambiar de Register a Login
 if (goLoginLink) {
   goLoginLink.addEventListener('click', (e) => {
     e.preventDefault()
@@ -178,7 +211,6 @@ if (goLoginLink) {
   })
 }
 
-// Botón "Cerrar Sesión"
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
     setToken(null)
@@ -191,58 +223,52 @@ if (logoutBtn) {
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    loginError.textContent = ''
+    if (loginError) loginError.textContent = ''
 
     const email = document.getElementById('login-email').value.trim()
-    const password = document
-      .getElementById('login-password')
-      .value.trim()
+    const password = document.getElementById('login-password').value.trim()
 
     try {
       const data = await loginRequest(email, password)
       setToken(data.access_token, data.user)
       showApp()
-    } catch (err) {
-      loginError.textContent =
-        'Error de autenticación. Verifica credenciales o el estado del servidor.'
+    } catch (_) {
+      if (loginError) {
+        loginError.textContent =
+          'Error de autenticación. Verifica credenciales o el estado del servidor.'
+      }
     }
   })
 }
 
-// ---- REGISTRO CON USUARIO ÚNICO ----
+// ---- REGISTRO ----
 
 if (registerForm) {
   registerForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    registerError.textContent = ''
-    registerSuccess.textContent = ''
+    if (registerError) registerError.textContent = ''
+    if (registerSuccess) registerSuccess.textContent = ''
 
-    const username = document
-      .getElementById('register-username')
-      .value.trim()
-    const email = document
-      .getElementById('register-email')
-      .value.trim()
-    const password = document
-      .getElementById('register-password')
-      .value.trim()
+    const username = document.getElementById('register-username').value.trim()
+    const email = document.getElementById('register-email').value.trim()
+    const password = document.getElementById('register-password').value.trim()
 
     if (!username || !email || !password) {
-      registerError.textContent = 'Todos los campos son obligatorios.'
+      if (registerError) registerError.textContent = 'Todos los campos son obligatorios.'
       return
     }
 
     try {
       await registerRequest(username, email, password)
-      registerSuccess.textContent =
-        'Account created successfully. You can now sign in.'
-      // Opcional: volver automáticamente al login
-      setTimeout(() => {
-        showLogin()
-      }, 1500)
+      if (registerSuccess) {
+        registerSuccess.textContent = 'Cuenta creada con éxito. Ya puedes iniciar sesión.'
+      }
+      setTimeout(() => showLogin(), 1500)
     } catch (err) {
-      registerError.textContent =
-        'Registration failed. Please verify your data or try again later.'
+      if (registerError) {
+        registerError.textContent =
+          err?.message || 'No se pudo registrar. Verifica tus datos o intenta más tarde.'
+      }
     }
   })
 }
@@ -252,29 +278,35 @@ if (registerForm) {
 async function loadDashboard() {
   try {
     const stats = await getOverviewStats()
-    kpiOccupied.textContent = stats.occupied
-    kpiFree.textContent = stats.free
-    kpiRate.textContent =
-      '$' + (stats.currentRatePerMinute || 0).toFixed(2) + '/min'
-    kpiActive.textContent = stats.activeVehicles
 
-    const occ = stats.occupancyPercent ?? 0
+    safeText(kpiOccupied, stats.occupied ?? '-')
+    safeText(kpiFree, stats.free ?? '-')
+
+    const rateMin = Number(
+      stats.currentRatePerMinute ?? stats.rate_per_minute ?? 0
+    )
+    safeText(kpiRate, rateMin ? `${COP.format(rateMin)} / min` : '-')
+
+    safeText(kpiActive, stats.activeVehicles ?? stats.active_sessions ?? '-')
+
+    const occ = Number(stats.occupancyPercent ?? stats.occupancy_percent ?? 0)
     const safe = Math.max(0, Math.min(100, occ))
+
     occupancyBar.style.width = `${safe}%`
-    occupancyLabel.textContent = `${safe.toFixed(
-      1
-    )}% de ocupación promedio`
+    occupancyLabel.textContent = `${safe.toFixed(1)}% de ocupación promedio`
 
     const sessions = await getRecentSessions(5)
     renderRecentActivity(recentActivity, sessions)
-  } catch (err) {
-    kpiOccupied.textContent = '-'
-    kpiFree.textContent = '-'
-    kpiRate.textContent = '-'
-    kpiActive.textContent = '-'
+  } catch (_) {
+    safeText(kpiOccupied, '-')
+    safeText(kpiFree, '-')
+    safeText(kpiRate, '-')
+    safeText(kpiActive, '-')
+
     occupancyBar.style.width = '0%'
     occupancyLabel.textContent =
       'No se pudieron cargar las estadísticas del core-service.'
+
     recentActivity.innerHTML =
       '<li class="muted">No se pudo obtener la actividad reciente.</li>'
   }
@@ -289,17 +321,18 @@ async function loadVehiclesData() {
       getRecentSessions(8)
     ])
 
-    // Slots
     slotsTable.innerHTML = ''
     if (!slots.length) {
       slotsTable.innerHTML =
-        '<div class="muted">No se encontraron slots. Configura slots en el backend.</div>'
+        '<div class="muted">No se encontraron espacios. Configura slots en el backend.</div>'
     } else {
       slots.forEach((s) => {
         const row = document.createElement('div')
         row.className = 'slots-row'
+
         const statusClass = s.occupied ? 'status-bad' : 'status-ok'
         const statusText = s.occupied ? 'Ocupado' : 'Libre'
+
         row.innerHTML = `
           <span>${s.code}</span>
           <span class="${statusClass}">${statusText}</span>
@@ -309,9 +342,8 @@ async function loadVehiclesData() {
       })
     }
 
-    // Actividad reciente
     renderRecentActivity(recentActivityVehicles, sessions)
-  } catch (err) {
+  } catch (_) {
     slotsTable.innerHTML =
       '<div class="muted">No se pudieron cargar los slots desde el core-service.</div>'
     recentActivityVehicles.innerHTML =
@@ -326,38 +358,54 @@ if (vehicleForm) {
     vehiclePlateInput.addEventListener('input', (e) => {
       e.target.value = formatPlate(e.target.value)
     })
+    vehiclePlateInput.addEventListener('blur', (e) => {
+      e.target.value = formatPlate(e.target.value)
+    })
   }
 
   vehicleForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    vehicleMessage.textContent = ''
+    if (vehicleMessage) vehicleMessage.textContent = ''
 
     const plate = formatPlate(vehiclePlateInput.value)
-    const mode = [...vehicleForm.elements['mode']].find((r) => r.checked)
-      .value
+    const modeEl = [...vehicleForm.elements['mode']].find((r) => r.checked)
+    const mode = modeEl?.value
+
+    if (!mode) {
+      if (vehicleMessage) vehicleMessage.textContent = 'Selecciona Entrada o Salida.'
+      return
+    }
 
     if (!isValidPlate(plate)) {
-      vehicleMessage.textContent = 'Formato inválido. Usa ABC-123.'
+      if (vehicleMessage) vehicleMessage.textContent = 'Formato inválido. Usa ABC-123.'
       return
     }
 
     try {
       let res
+
       if (mode === 'entry') {
         res = await registerEntry(plate)
-        vehicleMessage.textContent = `Entrada registrada. Espacio: ${
-          res.slot_code || 'asignado'
-        } · Placa: ${res.plate || plate}.`
+        vehicleMessage.textContent =
+          `Entrada registrada. Espacio: ${res.slot_code || res.slot || 'asignado'} · Placa: ${res.plate || plate}.`
       } else {
         res = await registerExit(plate)
+
+        // aseguramos minutos para UI (backend debe mandar minutes)
         const minutes =
-          res.minutes !== undefined ? res.minutes : '-'
-        const amount =
-          res.amount !== undefined
-            ? `$${res.amount.toFixed(2)}`
-            : '$0.00'
-        vehicleMessage.textContent = `Salida registrada. ${minutes} min · Total ${amount}.`
-        showReceipt(res)
+          res.minutes ?? computeMinutesFallback(res.check_in_at || res.check_in, res.check_out_at || res.check_out)
+
+        const amount = Number(res.amount ?? (minutes * (res.rate_per_minute ?? 0)))
+
+        vehicleMessage.textContent =
+          `Salida registrada. ${minutes} min · Total ${COP.format(amount)}.`
+
+        // ✅ Mostramos recibo en MODAL (más estable que popup)
+        showReceiptModal({
+          ...res,
+          minutes,
+          amount
+        })
       }
 
       vehiclePlateInput.value = ''
@@ -370,6 +418,8 @@ if (vehicleForm) {
     }
   })
 }
+
+// ---- RENDER ACTIVIDAD ----
 
 function renderRecentActivity(listElement, sessions) {
   const items = Array.isArray(sessions)
@@ -385,69 +435,76 @@ function renderRecentActivity(listElement, sessions) {
   items.forEach((s) => {
     const type = s.check_out_at ? 'Salida' : 'Entrada'
     const time = formatDateTime(s.check_out_at || s.check_in_at)
+
     const li = document.createElement('li')
     li.textContent = `${s.plate} · ${type} · ${time}`
     listElement.appendChild(li)
   })
 }
 
-function showReceipt(data) {
-  const receiptWindow = window.open('', '_blank', 'width=520,height=680')
-  if (!receiptWindow) return
+// ---- MODAL RECIBO ----
 
-  const plate = data.plate || ''
+function showReceiptModal(data) {
+  if (!receiptModal) {
+    // Fallback mínimo si no existe el modal en HTML
+    alert(
+      `Salida registrada\n` +
+      `Placa: ${data.plate || '-'}\n` +
+      `Entrada: ${formatDateTime(data.check_in_at || data.check_in) || '-'}\n` +
+      `Salida: ${formatDateTime(data.check_out_at || data.check_out) || '-'}\n` +
+      `Minutos: ${data.minutes ?? '-'}\n` +
+      `Total: ${COP.format(Number(data.amount || 0))}`
+    )
+    return
+  }
+
+  const rPlate = document.getElementById('r-plate')
+  const rSlot = document.getElementById('r-slot')
+  const rCheckin = document.getElementById('r-checkin')
+  const rCheckout = document.getElementById('r-checkout')
+  const rMinutes = document.getElementById('r-minutes')
+  const rAmount = document.getElementById('r-amount')
+
+  const plate = data.plate || '-'
   const slot = data.slot || data.slot_code || '-'
   const checkIn = formatDateTime(data.check_in_at || data.check_in)
   const checkOut = formatDateTime(data.check_out_at || data.check_out)
-  const rateHour = Number(data.rate_per_hour || (data.rate_per_minute || 0) * 60)
+  const minutes = data.minutes ?? '-'
   const amount = Number(data.amount || 0)
 
-  const logo = '/images/favicon.svg'
-  receiptWindow.document.write(`
-    <html>
-      <head>
-        <title>Recibo de Salida</title>
-        <style>
-          body { font-family: 'Inter', Arial, sans-serif; margin: 24px; color: #1f2937; }
-          .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-          .brand .logo { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
-          .receipt { border: 1px solid #e5e7eb; padding: 16px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
-          h1 { margin: 0 0 4px 0; font-size: 20px; }
-          h2 { margin: 8px 0 12px 0; font-size: 16px; color: #4b5563; }
-          .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e5e7eb; }
-          .row:last-child { border-bottom: none; }
-          .label { color: #6b7280; font-size: 13px; }
-          .value { font-weight: 600; }
-          .total { font-size: 18px; margin-top: 12px; }
-          .btn-print { margin-top: 16px; padding: 10px 14px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-          .btn-print:hover { background: #1d4ed8; }
-        </style>
-      </head>
-      <body>
-        <div class="brand">
-          <div class="logo"><img src="${logo}" alt="Logo" onerror="this.parentElement.textContent='P'" style="width:100%;height:100%;object-fit:contain;border-radius:50%;" /></div>
-          <div>
-            <h1>Parqueadero Web</h1>
-            <div style="color:#6b7280; font-size:13px;">Recibo de salida</div>
-          </div>
-        </div>
-        <div class="receipt">
-          <div class="row"><div class="label">Placa</div><div class="value">${plate}</div></div>
-          <div class="row"><div class="label">Espacio</div><div class="value">${slot}</div></div>
-          <div class="row"><div class="label">Entrada</div><div class="value">${checkIn}</div></div>
-          <div class="row"><div class="label">Salida</div><div class="value">${checkOut}</div></div>
-          <div class="row"><div class="label">Tarifa por hora</div><div class="value">$${rateHour.toFixed(2)}</div></div>
-          <div class="row total"><div class="label">Total cobrado</div><div class="value">$${amount.toFixed(2)}</div></div>
-          <button class="btn-print" onclick="window.print()">Generar Recibo</button>
-        </div>
-      </body>
-    </html>
-  `)
-  receiptWindow.document.close()
+  safeText(rPlate, plate)
+  safeText(rSlot, slot)
+  safeText(rCheckin, checkIn || '-')
+  safeText(rCheckout, checkOut || '-')
+  safeText(rMinutes, String(minutes))
+  safeText(rAmount, COP.format(amount))
+
+  receiptModal.classList.remove('hidden')
+}
+
+// Cerrar modal por botón
+if (receiptCloseBtn && receiptModal) {
+  receiptCloseBtn.addEventListener('click', () => {
+    receiptModal.classList.add('hidden')
+  })
+}
+
+// Cerrar modal por click fuera de la tarjeta
+if (receiptModal) {
+  receiptModal.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('modal-backdrop')) {
+      receiptModal.classList.add('hidden')
+    }
+  })
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !receiptModal.classList.contains('hidden')) {
+      receiptModal.classList.add('hidden')
+    }
+  })
 }
 
 // ---- ESTADO INICIAL ----
-// Si ya hay token guardado, entrar directo a la app; si no, mostrar login.
 if (isAuthenticated()) {
   showApp()
 } else {

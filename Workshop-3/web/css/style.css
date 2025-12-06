@@ -28,10 +28,12 @@ body {
 .navbar {
   background-color: var(--primary);
   color: var(--white);
-  padding: 10px 24px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 }
 
@@ -50,6 +52,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
+  color: var(--white);
 }
 
 .logo-text {
@@ -60,13 +63,13 @@ body {
   margin-left: 24px;
   display: flex;
   gap: 16px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .nav-link {
   color: var(--white);
   text-decoration: none;
-  opacity: 0.8;
+  opacity: 0.85;
   padding-bottom: 2px;
   border-bottom: 2px solid transparent;
 }
@@ -82,6 +85,7 @@ body {
 
 .navbar-right {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
 
@@ -89,12 +93,15 @@ body {
 
 .btn {
   border: none;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.2px;
   transition: all 0.18s ease-in-out;
+  white-space: nowrap;
+  min-height: 34px;
 }
 
 .btn-primary {
@@ -209,7 +216,7 @@ label {
   padding: 8px 10px;
   border-radius: var(--radius-xl);
   border: 1px solid #d0d7de;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .input:focus {
@@ -276,6 +283,10 @@ label {
   .grid-2,
   .grid-2-1 {
     grid-template-columns: 1fr;
+  }
+
+  .nav-links {
+    margin-left: 12px;
   }
 }
 
@@ -378,4 +389,91 @@ label {
 
 .footer-right {
   opacity: 0.8;
+}
+
+/* ✅ ---- MODAL RECIBO ---- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  position: relative;
+  width: min(520px, 95vw);
+  background: var(--secondary);
+  color: var(--white);
+  border-radius: var(--radius-2xl);
+  padding: 22px 22px 18px 22px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modal-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.modal-brand-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.modal-brand-sub {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.modal-title {
+  margin-top: 8px;
+  font-size: 1.15rem;
+}
+
+.modal-rows {
+  margin-top: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-xl);
+  padding: 10px 12px;
+}
+
+.modal-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.14);
+  font-size: 0.9rem;
+}
+
+.modal-row:last-child {
+  border-bottom: none;
+}
+
+.modal-label {
+  opacity: 0.85;
+}
+
+.modal-value {
+  font-weight: 700;
+}
+
+.modal-row.total .modal-value {
+  font-size: 1.05rem;
 }
