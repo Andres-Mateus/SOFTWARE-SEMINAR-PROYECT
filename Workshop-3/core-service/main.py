@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_session
-from models import ParkingSession, Slot
 from schemas import (
     EntryRequest,
     EntryResponse,
@@ -20,7 +19,6 @@ from services.parking_service import (
     list_slots,
     register_entry,
     register_exit,
-    init_database,
 )
 
 app = FastAPI(title="Parking Core Service", openapi_url="/api/core/openapi.json")
@@ -52,7 +50,11 @@ def stats_overview(db: Session = Depends(get_db)):
 
 
 @app.get("/api/core/sessions", response_model=list[SessionOut])
-def recent_sessions(limit: int = Query(5, ge=1, le=50), order: str = Query("desc", regex="^(asc|desc)$"), db: Session = Depends(get_db)):
+def recent_sessions(
+    limit: int = Query(5, ge=1, le=50),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
+    db: Session = Depends(get_db),
+):
     sessions = list_sessions(db, limit=limit, order=order)
     return [
         SessionOut(
@@ -63,8 +65,6 @@ def recent_sessions(limit: int = Query(5, ge=1, le=50), order: str = Query("desc
             check_in=s.check_in_at,
             check_out_at=s.check_out_at,
             check_out=s.check_out_at,
-            check_in_at=s.check_in_at,
-            check_out_at=s.check_out_at,
             amount=float(s.amount) if s.amount is not None else None,
         )
         for s in sessions
@@ -87,17 +87,15 @@ def entries(payload: EntryRequest, db: Session = Depends(get_db)):
     except ValueError as exc:
         if str(exc) == "NO_SLOTS":
             raise HTTPException(status_code=409, detail="No slots available")
-    try:
-        session = register_entry(db, payload.plate.upper())
-    except ValueError as exc:
+        # cualquier otro error de validación
         raise HTTPException(status_code=400, detail=str(exc))
+
     return EntryResponse(
         plate=session.plate,
         slot_code=session.slot.code,
         slot=session.slot.code,
         check_in_at=session.check_in_at,
         check_in=session.check_in_at,
-        check_in_at=session.check_in_at,
     )
 
 
@@ -112,13 +110,20 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
     except ValueError as exc:
         if str(exc) == "ACTIVE_SESSION_NOT_FOUND":
             raise HTTPException(status_code=404, detail="Active session not found")
-    try:
-        session = register_exit(db, payload.plate.upper())
-    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    minutes = max(1, int((session.check_out_at - session.check_in_at).total_seconds() // 60))
+    # minutes/amount deberían venir consistentes desde el service,
+    # pero mantenemos un cálculo defensivo por si amount es None.
+    if session.check_out_at and session.check_in_at:
+        minutes = max(
+            1,
+            int((session.check_out_at - session.check_in_at).total_seconds() // 60),
+        )
+    else:
+        minutes = 1
+
     amount = float(session.amount or 0)
+
     return ExitResponse(
         plate=session.plate,
         slot_code=session.slot.code,
@@ -127,9 +132,6 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
         amount=amount,
         check_out_at=session.check_out_at,
         check_out=session.check_out_at,
-        minutes=minutes,
-        amount=amount,
-        check_out_at=session.check_out_at,
     )
 
 
