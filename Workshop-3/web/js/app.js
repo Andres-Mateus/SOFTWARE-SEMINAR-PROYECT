@@ -62,6 +62,12 @@ function isAuthenticated() {
   return !!localStorage.getItem('token')
 }
 
+function formatDateTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  return isNaN(date.getTime()) ? value : date.toLocaleString('es-ES')
+}
+
 // ---- CONTROL DE VISTAS ----
 
 // Muestra login y oculta todo lo demás
@@ -214,7 +220,7 @@ if (registerForm) {
       }, 1500)
     } catch (err) {
       registerError.textContent =
-        'Registration failed. Invalid/used access code or server error.'
+        'Registration failed. Please verify your data or try again later.'
     }
   })
 }
@@ -238,31 +244,17 @@ async function loadDashboard() {
     )}% de ocupación promedio`
 
     const sessions = await getRecentSessions(5)
-    const items = sessions.items || sessions || []
-    recentActivity.innerHTML = ''
-    if (!items.length) {
-      recentActivity.innerHTML =
-        '<li class="muted">Sin movimientos recientes.</li>'
-    } else {
-      items.forEach((s) => {
-        const type = s.check_out_at ? 'Salida' : 'Entrada'
-        const time = s.check_in_at || ''
-        const li = document.createElement('li')
-        li.textContent = `${s.plate} · ${type} · ${time}`
-        recentActivity.appendChild(li)
-      })
-    }
+    renderRecentActivity(recentActivity, sessions)
   } catch (err) {
-    // Datos de ejemplo si el core aún no está listo
-    kpiOccupied.textContent = 48
-    kpiFree.textContent = 52
-    kpiRate.textContent = '$0.05/min'
-    kpiActive.textContent = 75
-    occupancyBar.style.width = '48%'
+    kpiOccupied.textContent = '-'
+    kpiFree.textContent = '-'
+    kpiRate.textContent = '-'
+    kpiActive.textContent = '-'
+    occupancyBar.style.width = '0%'
     occupancyLabel.textContent =
-      '48.0% de ocupación promedio (demo)'
+      'No se pudieron cargar las estadísticas del core-service.'
     recentActivity.innerHTML =
-      '<li class="muted">Usando datos de ejemplo. Conecta el core-service para ver datos reales.</li>'
+      '<li class="muted">No se pudo obtener la actividad reciente.</li>'
   }
 }
 
@@ -296,32 +288,12 @@ async function loadVehiclesData() {
     }
 
     // Actividad reciente
-    const items = sessions.items || sessions || []
-    recentActivityVehicles.innerHTML = ''
-    if (!items.length) {
-      recentActivityVehicles.innerHTML =
-        '<li class="muted">Sin movimientos recientes.</li>'
-    } else {
-      items.forEach((s) => {
-        const type = s.check_out_at ? 'Salida' : 'Entrada'
-        const time = s.check_in_at || ''
-        const li = document.createElement('li')
-        li.textContent = `${s.plate} · ${type} · ${time}`
-        recentActivityVehicles.appendChild(li)
-      })
-    }
+    renderRecentActivity(recentActivityVehicles, sessions)
   } catch (err) {
-    // Datos demo si no hay core-service disponible
-    slotsTable.innerHTML = `
-      <div class="slots-row">
-        <span>A01</span><span class="status-bad">Ocupado</span><span>ABC-123</span>
-      </div>
-      <div class="slots-row">
-        <span>A02</span><span class="status-ok">Libre</span><span>-</span>
-      </div>
-    `
+    slotsTable.innerHTML =
+      '<div class="muted">No se pudieron cargar los slots desde el core-service.</div>'
     recentActivityVehicles.innerHTML =
-      '<li class="muted">Mostrando datos de ejemplo. Conecta el core-service.</li>'
+      '<li class="muted">No se pudo obtener la actividad reciente.</li>'
   }
 }
 
@@ -347,7 +319,7 @@ if (vehicleForm) {
         res = await registerEntry(plate)
         vehicleMessage.textContent = `Entrada registrada. Espacio: ${
           res.slot_code || 'asignado'
-        }.`
+        } · Placa: ${res.plate || plate}.`
       } else {
         res = await registerExit(plate)
         const minutes =
@@ -360,12 +332,33 @@ if (vehicleForm) {
       }
 
       vehiclePlateInput.value = ''
-      loadVehiclesData()
-      loadDashboard()
+      await loadVehiclesData()
+      await loadDashboard()
     } catch (err) {
       vehicleMessage.textContent =
+        err?.message ||
         'Error al registrar la operación. Verifica la placa o la conexión con el backend.'
     }
+  })
+}
+
+function renderRecentActivity(listElement, sessions) {
+  const items = Array.isArray(sessions)
+    ? sessions
+    : sessions?.items || sessions || []
+
+  listElement.innerHTML = ''
+  if (!items.length) {
+    listElement.innerHTML = '<li class="muted">Sin movimientos recientes.</li>'
+    return
+  }
+
+  items.forEach((s) => {
+    const type = s.check_out_at ? 'Salida' : 'Entrada'
+    const time = formatDateTime(s.check_out_at || s.check_in_at)
+    const li = document.createElement('li')
+    li.textContent = `${s.plate} · ${type} · ${time}`
+    listElement.appendChild(li)
   })
 }
 
