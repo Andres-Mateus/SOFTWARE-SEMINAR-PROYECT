@@ -1,5 +1,4 @@
 # main.py
-from datetime import timezone
 import math
 
 from fastapi import Depends, FastAPI, HTTPException, Query
@@ -28,7 +27,6 @@ from services.parking_service import (
     RATE_PER_MINUTE,
 )
 
-# Fallback seguro en caso de que no exista en tu service
 CURRENCY = "COP"
 
 app = FastAPI(title="Parking Core Service", openapi_url="/api/core/openapi.json")
@@ -121,25 +119,15 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail="Active session not found")
         raise HTTPException(status_code=400, detail=str(exc))
 
-    # --- Defensa contra datos antiguos naive ---
     check_in = session.check_in_at
     check_out = session.check_out_at
 
-    if check_in and check_in.tzinfo is None:
-        check_in = check_in.replace(tzinfo=timezone.utc)
-
-    if check_out and check_out.tzinfo is None:
-        check_out = check_out.replace(tzinfo=timezone.utc)
-
-    # --- Minutos con redondeo hacia arriba ---
     minutes = 1
     if check_in and check_out:
-        seconds = max(0, (check_out - check_in).total_seconds())
-        minutes = max(1, math.ceil(seconds / 60))
+        total_seconds = (check_out - check_in).total_seconds()
+        minutes = max(1, math.ceil(total_seconds / 60))
 
-    # --- Monto desde el service (fuente de verdad) ---
-    amount = float(session.amount or (minutes * RATE_PER_MINUTE))
-
+    amount = float(session.amount or 0)
     rate_per_minute = float(RATE_PER_MINUTE)
     rate_per_hour = float(RATE_PER_MINUTE * 60)
 

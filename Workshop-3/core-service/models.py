@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+# models.py
+from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
 
@@ -19,16 +20,12 @@ class ParkingSession(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    plate = Column(String(20), nullable=False, index=True)
+    plate = Column(String(20), nullable=False)
     slot_id = Column(Integer, ForeignKey("slots.id"), nullable=False)
 
-    check_in_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    check_out_at = Column(DateTime(timezone=True), nullable=True)
-
+    # 👇 IMPORTANTE: sin timezone, usando hora local
+    check_in_at = Column(DateTime(timezone=False), default=datetime.now, nullable=False)
+    check_out_at = Column(DateTime(timezone=False))
     amount = Column(Numeric(10, 2))
 
     slot = relationship("Slot", back_populates="sessions")
