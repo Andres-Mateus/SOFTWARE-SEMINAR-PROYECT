@@ -1,3 +1,6 @@
+# main.py
+import math
+
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -14,12 +17,17 @@ from schemas import (
 )
 from services.parking_service import (
     ensure_slots,
+    format_plate_display,
     get_overview,
     list_sessions,
     list_slots,
     register_entry,
     register_exit,
+    PLATE_REGEX,
+    RATE_PER_MINUTE,
 )
+
+CURRENCY = "COP"
 
 app = FastAPI(title="Parking Core Service", openapi_url="/api/core/openapi.json")
 
@@ -58,7 +66,7 @@ def recent_sessions(
     sessions = list_sessions(db, limit=limit, order=order)
     return [
         SessionOut(
-            plate=s.plate,
+            plate=format_plate_display(s.plate),
             slot_code=s.slot.code,
             slot=s.slot.code,
             check_in_at=s.check_in_at,
@@ -79,19 +87,18 @@ def slots(db: Session = Depends(get_db)):
 @app.post("/api/core/entries", response_model=EntryResponse)
 def entries(payload: EntryRequest, db: Session = Depends(get_db)):
     plate = (payload.plate or "").strip().upper()
-    if not plate:
-        raise HTTPException(status_code=400, detail="Plate is required")
+    if not plate or not PLATE_REGEX.fullmatch(plate):
+        raise HTTPException(status_code=400, detail="Invalid plate format. Use ABC-123.")
 
     try:
         session = register_entry(db, plate)
     except ValueError as exc:
         if str(exc) == "NO_SLOTS":
             raise HTTPException(status_code=409, detail="No slots available")
-        # cualquier otro error de validación
         raise HTTPException(status_code=400, detail=str(exc))
 
     return EntryResponse(
-        plate=session.plate,
+        plate=format_plate_display(session.plate),
         slot_code=session.slot.code,
         slot=session.slot.code,
         check_in_at=session.check_in_at,
@@ -102,8 +109,8 @@ def entries(payload: EntryRequest, db: Session = Depends(get_db)):
 @app.post("/api/core/exits", response_model=ExitResponse)
 def exits(payload: ExitRequest, db: Session = Depends(get_db)):
     plate = (payload.plate or "").strip().upper()
-    if not plate:
-        raise HTTPException(status_code=400, detail="Plate is required")
+    if not plate or not PLATE_REGEX.fullmatch(plate):
+        raise HTTPException(status_code=400, detail="Invalid plate format. Use ABC-123.")
 
     try:
         session = register_exit(db, plate)
@@ -112,26 +119,33 @@ def exits(payload: ExitRequest, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail="Active session not found")
         raise HTTPException(status_code=400, detail=str(exc))
 
-    # minutes/amount deberían venir consistentes desde el service,
-    # pero mantenemos un cálculo defensivo por si amount es None.
-    if session.check_out_at and session.check_in_at:
-        minutes = max(
-            1,
-            int((session.check_out_at - session.check_in_at).total_seconds() // 60),
-        )
-    else:
-        minutes = 1
+    check_in = session.check_in_at
+    check_out = session.check_out_at
+
+    minutes = 1
+    if check_in and check_out:
+        total_seconds = (check_out - check_in).total_seconds()
+        minutes = max(1, math.ceil(total_seconds / 60))
 
     amount = float(session.amount or 0)
+    rate_per_minute = float(RATE_PER_MINUTE)
+    rate_per_hour = float(RATE_PER_MINUTE * 60)
+
+    display_plate = format_plate_display(session.plate)
 
     return ExitResponse(
-        plate=session.plate,
+        plate=display_plate,
         slot_code=session.slot.code,
         slot=session.slot.code,
+        check_in_at=check_in,
+        check_in=check_in,
         minutes=minutes,
         amount=amount,
-        check_out_at=session.check_out_at,
-        check_out=session.check_out_at,
+        rate_per_minute=rate_per_minute,
+        rate_per_hour=rate_per_hour,
+        currency=CURRENCY,
+        check_out_at=check_out,
+        check_out=check_out,
     )
 
 

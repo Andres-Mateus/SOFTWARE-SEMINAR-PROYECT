@@ -77,4 +77,3 @@ pytest
 - Auth service: **8080**
 - Core service: **8000**
 - Frontend (example dev server): **5500**
-- Frontend (example dev server): **5500**

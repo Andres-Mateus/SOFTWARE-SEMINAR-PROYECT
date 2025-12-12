@@ -135,7 +135,6 @@
         ¿Ya tienes una cuenta?
         <a href="#" id="go-login" class="link-inline">Inicia sesión aquí.</a>
       </p>
-      
     </section>
 
     <!-- SECCIÓN DE APLICACIÓN (SOLO CON SESIÓN) -->
@@ -214,6 +213,8 @@
                   id="vehicle-plate"
                   class="input"
                   placeholder="ABC-123"
+                  maxlength="7"
+                  pattern="[A-Z]{3}-[0-9]{3}"
                   required
                 />
               </label>
@@ -251,6 +252,51 @@
       </section>
     </section>
   </main>
+
+ <!-- ✅ MODAL RECIBO SALIDA -->
+<div id="receipt-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-brand">
+      <div class="logo-circle modal-logo">P</div>
+      <div>
+        <div class="modal-brand-title">Parqueadero Web</div>
+        <div class="modal-brand-sub">Recibo de salida</div>
+      </div>
+    </div>
+
+    <h2 id="receipt-title" class="modal-title">Detalles de la salida</h2>
+
+    <div class="modal-rows">
+      <div class="modal-row">
+        <span class="modal-label">Placa</span>
+        <span id="r-plate" class="modal-value">-</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Espacio</span>
+        <span id="r-slot" class="modal-value">-</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Hora de entrada</span>
+        <span id="r-checkin" class="modal-value">-</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Hora de salida</span>
+        <span id="r-checkout" class="modal-value">-</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-label">Minutos</span>
+        <span id="r-minutes" class="modal-value">-</span>
+      </div>
+      <div class="modal-row total">
+        <span class="modal-label">Total cobrado</span>
+        <span id="r-amount" class="modal-value">-</span>
+      </div>
+    </div>
+
+    <button id="receipt-close-btn" class="btn btn-accent full">Cerrar</button>
+  </div>
+</div>
 
   <!-- FOOTER -->
   <footer class="footer">

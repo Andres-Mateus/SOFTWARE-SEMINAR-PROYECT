@@ -1,13 +1,38 @@
-from datetime import datetime, timezone
-from typing import List
+# services/parking_service.py
+from datetime import datetime
+import re
+import math
+from typing import List, Optional
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from database import get_session
 from models import ParkingSession, Slot
 
-RATE_PER_MINUTE = 0.05
-DEFAULT_SLOTS = ["A01", "A02", "A03", "B01", "B02"]
+# --- TARIFA OFICIAL ---
+RATE_PER_MINUTE = 30  # COP por minuto
+
+def _build_slot_codes(prefix: str, start: int, end: int) -> list[str]:
+    return [f"{prefix}{str(i).zfill(2)}" for i in range(start, end + 1)]
+
+DEFAULT_SLOTS = _build_slot_codes("A", 1, 10) + _build_slot_codes("B", 1, 10) + _build_slot_codes("C", 1, 5)
+
+PLATE_REGEX = re.compile(r"^[A-Z]{3}-\d{3}$")
+
+
+def normalize_plate(plate: str) -> str:
+    """Forma interna: mayúsculas sin guion."""
+    return re.sub(r"[^A-Z0-9]", "", (plate or "").upper())
+
+
+def format_plate_display(plate: Optional[str]) -> Optional[str]:
+    if not plate:
+        return plate
+    cleaned = normalize_plate(plate)
+    if len(cleaned) == 6:
+        return f"{cleaned[:3]}-{cleaned[3:]}"
+    return cleaned
 
 
 def ensure_slots(session: Session):
@@ -19,9 +44,7 @@ def ensure_slots(session: Session):
 
 def get_overview(session: Session):
     total_slots = session.scalar(select(func.count(Slot.id))) or 0
-    occupied = session.scalar(
-        select(func.count(Slot.id)).where(Slot.occupied.is_(True))
-    ) or 0
+    occupied = session.scalar(select(func.count(Slot.id)).where(Slot.occupied.is_(True))) or 0
     free = total_slots - occupied
 
     active_vehicles = session.scalar(
@@ -31,24 +54,18 @@ def get_overview(session: Session):
     occupancy_percent = (occupied / total_slots * 100) if total_slots else 0
 
     rate_minute = RATE_PER_MINUTE
-    rate_hour = round(RATE_PER_MINUTE * 60, 2)
+    rate_hour = RATE_PER_MINUTE * 60
 
-    # Devolvemos ambos estilos (snake_case y camelCase) sin repetir claves
     return {
         "occupied": occupied,
         "free": max(free, 0),
-
-        "active_sessions": active_vehicles,
         "activeVehicles": active_vehicles,
-
-        "occupancy_percent": round(occupancy_percent, 2),
+        "active_sessions": active_vehicles,
         "occupancyPercent": round(occupancy_percent, 2),
-
-        "rate_per_minute": rate_minute,
+        "occupancy_percent": round(occupancy_percent, 2),
         "currentRatePerMinute": rate_minute,
-
+        "rate_per_minute": rate_minute,
         "rate_per_hour": rate_hour,
-        "currentRatePerHour": rate_hour,
     }
 
 
@@ -65,72 +82,71 @@ def list_slots(session: Session):
         ).all()
     }
 
-    slots = session.scalars(select(Slot).order_by(Slot.code)).all()
+    slots = session.scalars(select(Slot)).all()
     result = []
-
     for slot in slots:
         active = active_sessions.get(slot.id)
-        result.append({
-            "code": slot.code,
-            "occupied": slot.occupied,
-            "plate": active.plate if active else None
-        })
-
+        result.append(
+            {
+                "code": slot.code,
+                "occupied": slot.occupied,
+                "plate": format_plate_display(active.plate) if active else None,
+            }
+        )
     return result
 
 
 def register_entry(session: Session, plate: str) -> ParkingSession:
+    normalized = normalize_plate(plate)
+
     existing = session.scalars(
         select(ParkingSession).where(
-            ParkingSession.plate == plate,
-            ParkingSession.check_out_at.is_(None)
+            ParkingSession.check_out_at.is_(None),
+            ParkingSession.plate.in_([normalized, plate]),
         )
     ).first()
-
     if existing:
         return existing
 
     free_slot = session.scalars(
         select(Slot).where(Slot.occupied.is_(False)).order_by(Slot.code)
     ).first()
-
     if not free_slot:
         raise ValueError("NO_SLOTS")
 
     free_slot.occupied = True
 
     new_session = ParkingSession(
-        plate=plate,
+        plate=normalized,
         slot=free_slot,
-        check_in_at=datetime.now(timezone.utc),
+        # 👇 Hora local, sin timezone
+        check_in_at=datetime.now(),
     )
-
     session.add(new_session)
     return new_session
 
 
 def register_exit(session: Session, plate: str) -> ParkingSession:
+    normalized = normalize_plate(plate)
+
     parking_session = session.scalars(
         select(ParkingSession).where(
-            ParkingSession.plate == plate,
-            ParkingSession.check_out_at.is_(None)
+            ParkingSession.check_out_at.is_(None),
+            ParkingSession.plate.in_([normalized, plate]),
         )
     ).first()
-
     if not parking_session:
         raise ValueError("ACTIVE_SESSION_NOT_FOUND")
 
-    now = datetime.now(timezone.utc)
+    check_in = parking_session.check_in_at or datetime.now()
+    now = datetime.now()
+
+    parking_session.check_in_at = check_in
     parking_session.check_out_at = now
 
-    # Defensa por si check_in_at viniera rara
-    check_in = parking_session.check_in_at
-    if check_in and check_in.tzinfo is None:
-        check_in = check_in.replace(tzinfo=timezone.utc)
-
-    minutes = 1
-    if check_in:
-        minutes = max(1, int((now - check_in).total_seconds() // 60))
+    # diferencia en minutos, redondeando hacia arriba (mínimo 1)
+    total_seconds = (now - check_in).total_seconds()
+    minutes = max(1, math.ceil(total_seconds / 60))
 
     parking_session.amount = round(minutes * RATE_PER_MINUTE, 2)
 
@@ -144,5 +160,6 @@ def register_exit(session: Session, plate: str) -> ParkingSession:
 def init_database():
     with get_session() as session:
         from database import Base, engine
+
         Base.metadata.create_all(bind=engine)
         ensure_slots(session)
