@@ -1,0 +1,2 @@
+# Capture Cucumber execution output here after running:
+# cd Workshop-4/acceptance-tests && mvn test

@@ -64,9 +64,31 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.access_token").exists())
-                .andExpect(jsonPath("$.user.email").value("john@example.com"));
+                .andExpect(jsonPath("$.user.email").value("john@example.com"))
+                .andExpect(jsonPath("$.user.username").value("john"));
 
         assertThat(userRepository.findByEmail("john@example.com")).isPresent();
+    }
+
+    @Test
+    void register_failsWhenEmailExists() throws Exception {
+        Role role = roleRepository.findByName("ROLE_USER").orElseThrow();
+        User existing = new User();
+        existing.setUsername("john");
+        existing.setEmail("john@example.com");
+        existing.setPassword(passwordEncoder.encode("secret"));
+        existing.getRoles().add(role);
+        userRepository.save(existing);
+
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("johnny");
+        request.setEmail("john@example.com");
+        request.setPassword("another");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -88,6 +110,27 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.access_token").isNotEmpty())
-                .andExpect(jsonPath("$.user.username").value("alice"));
+                .andExpect(jsonPath("$.user.username").value("alice"))
+                .andExpect(jsonPath("$.user.email").value("alice@example.com"));
+    }
+
+    @Test
+    void login_failsWithBadCredentials() throws Exception {
+        Role role = roleRepository.findByName("ROLE_USER").orElseThrow();
+        User user = new User();
+        user.setUsername("bob");
+        user.setEmail("bob@example.com");
+        user.setPassword(passwordEncoder.encode("correct"));
+        user.getRoles().add(role);
+        userRepository.save(user);
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("bob@example.com");
+        request.setPassword("wrong");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
     }
 }

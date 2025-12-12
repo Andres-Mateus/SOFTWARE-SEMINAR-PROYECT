@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: parking_auth
+      MYSQL_USER: parking_user
+      MYSQL_PASSWORD: parking_pass
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: parking
+      POSTGRES_USER: admon
+      POSTGRES_PASSWORD: admon
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: Workshop-4/docker/Dockerfile.auth
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/parking_auth?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: parking_user
+      SPRING_DATASOURCE_PASSWORD: parking_pass
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  core-service:
+    build:
+      context: ..
+      dockerfile: Workshop-4/docker/Dockerfile.core
+    environment:
+      DATABASE_URL: postgresql+psycopg2://admon:admon@postgres:5432/parking
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ..
+      dockerfile: Workshop-4/docker/Dockerfile.web
+    depends_on:
+      - auth-service
+      - core-service
+    ports:
+      - "5500:80"
