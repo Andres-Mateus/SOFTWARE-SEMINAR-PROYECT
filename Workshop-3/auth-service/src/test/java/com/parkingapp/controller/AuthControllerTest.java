@@ -16,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -73,6 +75,7 @@ class AuthControllerTest {
     @Test
     void register_failsWhenEmailExists() throws Exception {
         Role role = roleRepository.findByName("ROLE_USER").orElseThrow();
+
         User existing = new User();
         existing.setUsername("john");
         existing.setEmail("john@example.com");
@@ -85,10 +88,15 @@ class AuthControllerTest {
         request.setEmail("john@example.com");
         request.setPassword("another");
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isInternalServerError());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                mockMvc.perform(
+                        MockMvcRequestBuilders.post("/api/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                ).andReturn()
+        )
+        .hasRootCauseInstanceOf(IllegalArgumentException.class)
+        .hasRootCauseMessage("Email already in use");
     }
 
     @Test
@@ -131,6 +139,6 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(MockMvcResultMatchers.status().isForbidden());
     }
 }

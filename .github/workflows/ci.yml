@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,19 +17,21 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
+
+      - name: Run Java unit tests
+        run: mvn -B -f Workshop-3/auth-service/pom.xml test
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r Workshop-3/core-service/requirements.txt pytest
-
-      - name: Run Java unit tests
-        run: mvn -f Workshop-3/auth-service/pom.xml test
 
       - name: Run Python unit tests
         run: pytest -q Workshop-3/core-service/tests

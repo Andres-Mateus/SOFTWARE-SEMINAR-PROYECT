@@ -10,7 +10,7 @@ services:
       MYSQL_USER: parking_user
       MYSQL_PASSWORD: parking_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
