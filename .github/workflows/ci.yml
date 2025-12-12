@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Workshop-3/core-service/requirements.txt pytest
+
+      - name: Run Java unit tests
+        run: mvn -f Workshop-3/auth-service/pom.xml test
+
+      - name: Run Python unit tests
+        run: pytest -q Workshop-3/core-service/tests
+
+      - name: Build auth-service image
+        run: docker build -f Workshop-4/docker/Dockerfile.auth -t parking/auth .
+
+      - name: Build core-service image
+        run: docker build -f Workshop-4/docker/Dockerfile.core -t parking/core .
+
+      - name: Build web image
+        run: docker build -f Workshop-4/docker/Dockerfile.web -t parking/web .
